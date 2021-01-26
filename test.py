@@ -1,5 +1,9 @@
 # Import packages
-#
+from Modules.utilities import download_datasets
+
+# Download dataset
+download_datasets()
+
 # # ====================================================================================================================
 # # Data preprocessing
 # data_train, data_val, data_test = data_preprocessing(args...)
@@ -30,7 +34,3 @@
 # print('Task  {:<12} {:<12} {:<12}\n'.format('Train Acc', 'Valid Acc', 'Test Acc'),
 #       f'A:  {acc_A_train:<12.4f} {acc_A_valid:<12.4f} {acc_A_test:<12.4f}\n',
 #       f'B:  {acc_B_train:<12.4f} {acc_B_valid:<12.4f} {acc_B_test:<12.4f}\n')
-
-# If you are not able to finish a task, fill the corresponding variable with 'TBD'. For example:
-# acc_A_train = 'TBD'
-# acc_B_test = 'TBD'

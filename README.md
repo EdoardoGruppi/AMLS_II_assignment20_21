@@ -2,6 +2,8 @@
 
 [Project](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21.git) ~ [Guide](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21/blob/main/Instructions.md)
 
+**Important:** the Datasets folder is empty however the datasets will be downloaded automatically running the main.py. 
+
 ## How to start
 
 A comprehensive guide concerning how to run the code along with additional information is provided in the file [Instruction.md](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21/blob/main/Instructions.md).
