@@ -1,8 +1,9 @@
 # Import packages
-from Modules.utilities import download_datasets
+from Modules.utilities import download_datasets, split_dataset
 
 # Download dataset
 download_datasets()
+split_dataset(test_size=100)
 
 # # ====================================================================================================================
 # # Data preprocessing
