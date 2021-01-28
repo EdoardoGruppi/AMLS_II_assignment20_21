@@ -19,7 +19,7 @@ crop_size = 96
 
 # ======================================================================================================================
 # Data preprocessing
-train_batches, valid_batches, test_batches = prepare_batches(crop_size=crop_size, batch_size=5, task='A',
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=crop_size, batch_size=10, task='A',
                                                              rotation=True, flip=True)
 
 # ====================================================================================================================
@@ -28,11 +28,11 @@ input_shape = [crop_size, crop_size, 3]
 # Build model object.
 model_A = A(input_shape)
 # Train model based on the training set (you should fine-tune your model based on validation set).
-acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=5, verbose=1)
-# # Test model based on the test set.
-# acc_A_test = model_A.test(args...)
-# # Some code to free memory if necessary.
+acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=20, verbose=1)
+# Test model based on the test set.
+acc_A_test = model_A.test(test_batches, plot=True)
 # Clean up memory/GPU etc...
+#
 
 # ======================================================================================================================
 # Data preprocessing
