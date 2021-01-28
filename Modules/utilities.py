@@ -9,6 +9,7 @@ from Modules.pre_processing import images_dataset
 from matplotlib import pyplot as plt
 from tensorflow.image import psnr
 import seaborn as sn
+from sys import stdout
 
 
 def download_datasets(extract=True):
@@ -73,25 +74,27 @@ def split_dataset(test_size=100):
                 shutil.move(os.path.join(train_folder, image), test_folder)
 
 
-def compute_dataset_mean():
-    folders = ['Train_A', 'Train_B', 'Train_HR']
-    for folder in folders:
-        path = os.path.join(base_dir, folder)
-        images_list = [os.path.join(path, item) for item in os.listdir(path)]
-        data_set = images_dataset(images_list)
-        mean_list = []
-        for image in data_set:
-            mean_list.append(np.mean(image, axis=(0, 1)))
-        print(np.mean(mean_list, axis=0))
+def plot_pair(lr_image, hr_image, ax=True, title=True):
+    """
+    Plots a comparison between the low-resolution and high-resolution images given.
 
-
-def plot_lr_hr_pair(lr_image, hr_image, ax=True, title=True):
+    :param lr_image: low-resolution image.
+    :param hr_image: high-resolution image.
+    :param ax: if True the axis of the plots, i.e. images, are hidden. default_value=True
+    :param title: if True the titles of the images are displayed. default_value=True
+    :return:
+    """
+    # Change seaborn style to avoid the presence of the grid within the plots
+    sn.set_style("whitegrid", {'axes.grid': False})
+    # Create figure depicting the low and high resolution images side-by-side
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     axes[0].imshow(lr_image)
     axes[1].imshow(hr_image)
+    # If title==True insert titles
     if title:
         axes[0].set_title('Low Resolution')
         axes[1].set_title('High Resolution')
+    # If ax==True insert axes
     if not ax:
         axes[0].axis('off')
         axes[1].axis('off')
@@ -99,20 +102,63 @@ def plot_lr_hr_pair(lr_image, hr_image, ax=True, title=True):
     plt.show()
 
 
+def plot_results(lr_images, predictions, hr_images, ax=True, title=True):
+    """
+    Plots the low-resolution, the predicted and the high-resolution images juxtaposed for every tuple of images passed.
+
+    :param lr_images: list of the low-resolution images.
+    :param predictions: list of the predicted images.
+    :param hr_images: list of the high-resolution images.
+    :param ax: if True the axis of the plots, i.e. images, are hidden. default_value=True
+    :param title: if True the titles of the images are displayed. default_value=True
+    :return:
+    """
+    # Change seaborn style to avoid the presence of the grid within the plots
+    sn.set_style("whitegrid", {'axes.grid': False})
+    # For the same starting image display its low-resolution, predicted and high-resolution versions.
+    for lr_image, pred_image, hr_image in zip(lr_images, predictions, hr_images):
+        # Create figure
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5.3))
+        axes[0].imshow(lr_image)
+        axes[1].imshow(pred_image)
+        axes[2].imshow(hr_image)
+        # If title==True insert titles
+        if title:
+            axes[0].set_title('Low Resolution')
+            axes[1].set_title('Prediction')
+            axes[2].set_title('Ground Truth')
+        # If ax==True insert axes
+        if not ax:
+            axes[0].axis('off')
+            axes[1].axis('off')
+            axes[2].axis('off')
+        plt.tight_layout()
+        plt.show()
+
+
 def psnr_metric(true_img, pred_img):
+    """
+    Computes the Peak signal-to-noise ratio (PSNR) on the images passed. The input can be list of images as well.
+    Nevertheless, in the latter case the two lists must have the same length.
+
+    :param true_img: real image/images.
+    :param pred_img: predicted image/images.
+    :return:
+    """
+    # The metric is computed exploiting the tf.image.psnr function provided by tensorflow
     return psnr(true_img, pred_img, max_val=1)
 
 
 def plot_history(metric, val_metric, loss, val_loss, title=None):
     """
-    Plots the history of the training phase and validation phase. It compares in two different subplots the metric
+    Plots the history of the training phase and validation phase. It compares, in two different subplots, the metric
     and the loss of the model.
 
-    :param metric: list of values for every epoch.
-    :param val_metric: list of values for every epoch.
-    :param loss: list of values for every epoch.
-    :param val_loss: list of values for every epoch.
-    :param title: tile of the figure printed. default_value=None
+    :param metric: list of values achieved after every epoch.
+    :param val_metric: list of values achieved after every epoch.
+    :param loss: list of values measured after every epoch.
+    :param val_loss: list of values measured after every epoch.
+    :param title: title of the figure displayed. default_value=None
     :return:
     """
     sn.set()
@@ -129,7 +175,54 @@ def plot_history(metric, val_metric, loss, val_loss, title=None):
     axes[1].set(ylabel='Loss', xlabel='Epoch')
     # Legend
     axes[1].legend(['Train', 'Valid'], loc='upper right')
+    # If title==True insert titles
     if title is not None:
         fig.suptitle(title)
     plt.tight_layout()
     plt.show()
+
+
+def progressbar(iterable_object, prefix="", size=60, output=stdout):
+    """
+    Displays a progress-bar animation, associated to a for cycle, inside a specified output "place".
+
+    :param iterable_object: object iterated through the for cycle.
+    :param prefix: string inserted before the progress-bar. default_value=""
+    :param size: dimension of the progress-bar. default_value=60
+    :param output: defines where to display the progress-bar. default_value=stdout
+    :return:
+    """
+    length = len(iterable_object)
+
+    def update_bar(step):
+        progress = int(size * step / length)
+        output.write("%s: [%s%s%s] %i/%i\r" % (prefix, "=" * progress, ">", "." * (size - progress), step, length))
+        output.flush()
+    update_bar(0)
+    for counter, item in enumerate(iterable_object):
+        yield item
+        update_bar(counter + 1)
+    output.write("\n")
+    output.flush()
+
+
+def compute_dataset_mean():
+    """
+    Computes the mean (channel-wise) of the starting dataset.
+
+    :return:
+    """
+    # List of the folders where the training images are located
+    folders = ['Train_A', 'Train_B', 'Train_HR']
+    for folder in folders:
+        path = os.path.join(base_dir, folder)
+        # List of the paths related to all the images within the folder considered
+        images_list = [os.path.join(path, item) for item in os.listdir(path)]
+        # Create the dataset object (tf.data.Dataset object)
+        data_set = images_dataset(images_list)
+        # List of the means computed on the R, G and B channels for every image
+        mean_list = []
+        for image in data_set:
+            mean_list.append(np.mean(image, axis=(0, 1)))
+        # Print the RGB means calculated on the images of the current folder
+        print(np.mean(mean_list, axis=0))
