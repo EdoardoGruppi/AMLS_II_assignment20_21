@@ -1,6 +1,7 @@
 # Import packages
 from Modules.utilities import download_datasets, split_dataset
 from Modules.pre_processing import prepare_batches
+from Modules.config import *
 import tensorflow as tf
 from A.a import A
 
@@ -14,21 +15,20 @@ if len(physical_devices) is not 0:
 # ======================================================================================================================
 # Download dataset
 download_datasets()
-split_dataset(test_size=20)
-crop_size = 96
+split_dataset(test_size=test_dim)
 
 # ======================================================================================================================
 # Data preprocessing
-train_batches, valid_batches, test_batches = prepare_batches(crop_size=crop_size, batch_size=10, task='A',
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim, task='A',
                                                              rotation=True, flip=True)
 
 # ====================================================================================================================
 # Task A
-input_shape = [crop_size, crop_size, 3]
+input_shape = [patch_size, patch_size, 3]
 # Build model object.
 model_A = A(input_shape)
 # Train model based on the training set (you should fine-tune your model based on validation set).
-acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=20, verbose=1)
+acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=2, verbose=2)
 # Test model based on the test set.
 acc_A_test = model_A.test(test_batches, plot=True)
 # Clean up memory/GPU etc...
