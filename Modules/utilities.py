@@ -1,13 +1,12 @@
 # Import packages
 import os
-from tensorflow import keras
+from Modules.pre_processing import load_dataset
+from tensorflow import keras, image
 from Modules.config import *
 import shutil
 from pathlib import Path
 import numpy as np
-from Modules.pre_processing import images_dataset
 from matplotlib import pyplot as plt
-from tensorflow.image import psnr
 import seaborn as sn
 from sys import stdout
 
@@ -69,9 +68,9 @@ def split_dataset(test_size=100):
         if not os.path.isdir(test_folder):
             # Create a new folder for the test dataset
             Path(test_folder).mkdir(parents=True, exist_ok=True)
-            for image in test_images:
+            for img in test_images:
                 # Move the images to the created folder
-                shutil.move(os.path.join(train_folder, image), test_folder)
+                shutil.move(os.path.join(train_folder, img), test_folder)
 
 
 def plot_pair(lr_image, hr_image, ax=True, title=True):
@@ -146,7 +145,7 @@ def psnr_metric(true_img, pred_img):
     :return:
     """
     # The metric is computed exploiting the tf.image.psnr function provided by tensorflow
-    return psnr(true_img, pred_img, max_val=1)
+    return image.psnr(true_img, pred_img, max_val=1)
 
 
 def plot_history(metric, val_metric, loss, val_loss, title=None):
@@ -182,7 +181,7 @@ def plot_history(metric, val_metric, loss, val_loss, title=None):
     plt.show()
 
 
-def progressbar(iterable_object, prefix="", size=60, output=stdout):
+def progressbar(iterable_object, prefix="", size=60, output=stdout, iterable=True, iterations=30):
     """
     Displays a progress-bar animation, associated to a for cycle, inside a specified output "place".
 
@@ -190,9 +189,16 @@ def progressbar(iterable_object, prefix="", size=60, output=stdout):
     :param prefix: string inserted before the progress-bar. default_value=""
     :param size: dimension of the progress-bar. default_value=60
     :param output: defines where to display the progress-bar. default_value=stdout
+    :param iterable: if True the object length can be obtained via len(). Otherwise the length parameter must
+        be passed. default_value=True
+    :param iterations: number of times the progress bar must be updated. Required only if the object has not a
+        length property. default_value=30
     :return:
     """
-    length = len(iterable_object)
+    if iterable:
+        length = len(iterable_object)
+    else:
+        length = iterations
 
     def update_bar(step):
         progress = int(size * step / length)
@@ -219,10 +225,10 @@ def compute_dataset_mean():
         # List of the paths related to all the images within the folder considered
         images_list = [os.path.join(path, item) for item in os.listdir(path)]
         # Create the dataset object (tf.data.Dataset object)
-        data_set = images_dataset(images_list)
+        data_set = load_dataset(images_list)
         # List of the means computed on the R, G and B channels for every image
         mean_list = []
-        for image in data_set:
-            mean_list.append(np.mean(image, axis=(0, 1)))
+        for img in data_set:
+            mean_list.append(np.mean(img, axis=(0, 1)))
         # Print the RGB means calculated on the images of the current folder
         print(np.mean(mean_list, axis=0))

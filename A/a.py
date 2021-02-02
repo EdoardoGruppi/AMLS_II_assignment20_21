@@ -1,10 +1,11 @@
 # Import packages
 import numpy as np
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, UpSampling2D, Conv2DTranspose
+from tensorflow.keras.layers import Conv2D, UpSampling2D
 from tensorflow.keras import optimizers
 from Modules.utilities import psnr_metric, plot_history, progressbar, plot_results
 from tensorflow.keras.backend import get_value
+from Modules.config import *
 
 
 class A:
@@ -39,9 +40,9 @@ class A:
         """
         # Trains the model for a fixed number of epochs
         history = self.model.fit(x=training_batches,
-                                 steps_per_epoch=len(training_batches),
+                                 steps_per_epoch=int((800 - test_dim) / batch_dim),
                                  validation_data=valid_batches,
-                                 validation_steps=len(valid_batches),
+                                 validation_steps=int(200 / batch_dim),
                                  epochs=epochs,
                                  verbose=verbose)
         if plot:
@@ -63,9 +64,11 @@ class A:
         """
         # List of all the results
         results = []
+        # Number of batches for the test set
+        n_batches = int(test_dim / batch_dim)
         print('\nTesting phase started...')
         # For every batch...
-        for batch in progressbar(test_batches, 'Status', 30):
+        for batch in progressbar(test_batches, 'Status', 30, iterable=False, iterations=n_batches):
             # ... the low nd high resolution images are extracted
             lr_test = batch[0]
             hr_test = batch[1]
