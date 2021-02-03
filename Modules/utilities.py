@@ -1,5 +1,6 @@
 # Import packages
 import os
+from tensorflow.keras.backend import get_value
 from Modules.pre_processing import load_dataset
 from tensorflow import keras, image
 from Modules.config import *
@@ -135,6 +136,55 @@ def plot_results(lr_images, predictions, hr_images, ax=True, title=True):
         plt.show()
 
 
+def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True, scale=4):
+    """
+    Plots a comparison among the low-resolution image, the predicted image, the ground truth image and the high
+    resolution image obtained through bicubic interpolation for every tuple of images passed.
+
+    :param lr_images: list of the low-resolution images.
+    :param predictions: list of the predicted images.
+    :param hr_images: list of the high-resolution images.
+    :param ax: if True the axis of the plots, i.e. images, are hidden. default_value=True
+    :param title: if True the titles of the images are displayed. default_value=True
+    :param scale: scale difference between the two images. default_value=4
+    :return:
+    """
+    # Change seaborn style to avoid the presence of the grid within the plots
+    sn.set_style("whitegrid", {'axes.grid': False})
+    results = []
+    # Size of the bicubic HR image
+    size = [patch_size * scale, patch_size * scale]
+    # For the same starting image display its low-resolution, predicted and high-resolution versions.
+    for lr_image, pred_image, hr_image in zip(lr_images, predictions, hr_images):
+        # Create the bicubic image via a bicubic interpolation applied on the LR image.
+        bicubic = image.resize(lr_image, size, method=image.ResizeMethod.BICUBIC)
+        # Clip all the values that are not in the range [0,1] and that are created by the previous step.
+        bicubic = np.clip(bicubic, a_min=0, a_max=1)
+        # Compute the PSNR metric on every bicubic image obtained
+        results.append(get_value(psnr_metric(hr_image, bicubic)))
+        # Create figure
+        fig, axes = plt.subplots(1, 4, figsize=(20, 5.3))
+        axes[0].imshow(lr_image)
+        axes[1].imshow(bicubic)
+        axes[2].imshow(pred_image)
+        axes[3].imshow(hr_image)
+        # If title==True insert titles
+        if title:
+            axes[0].set_title('Low Resolution')
+            axes[1].set_title('Bicubic')
+            axes[2].set_title('Prediction')
+            axes[3].set_title('Ground Truth')
+        # If ax==True insert axes
+        if not ax:
+            axes[0].axis('off')
+            axes[1].axis('off')
+            axes[2].axis('off')
+            axes[3].axis('off')
+        plt.tight_layout()
+        plt.show()
+    return results
+
+
 def psnr_metric(true_img, pred_img):
     """
     Computes the Peak signal-to-noise ratio (PSNR) on the images passed. The input can be list of images as well.
@@ -204,6 +254,7 @@ def progressbar(iterable_object, prefix="", size=60, output=stdout, iterable=Tru
         progress = int(size * step / length)
         output.write("%s: [%s%s%s] %i/%i\r" % (prefix, "=" * progress, ">", "." * (size - progress), step, length))
         output.flush()
+
     update_bar(0)
     for counter, item in enumerate(iterable_object):
         yield item

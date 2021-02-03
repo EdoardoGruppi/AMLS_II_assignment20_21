@@ -22,7 +22,7 @@ split_dataset(test_size=test_dim)
 train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim, task='A',
                                                              rotation=True, flip=True)
 
-# ====================================================================================================================
+# ======================================================================================================================
 # Task A
 input_shape = [patch_size, patch_size, 3]
 # Build model object.
@@ -30,9 +30,9 @@ model_A = A(input_shape)
 # Train model based on the training set (you should fine-tune your model based on validation set).
 acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=2, verbose=2)
 # Test model based on the test set.
-acc_A_test = model_A.test(test_batches, plot=True)
+acc_A_test = model_A.test(test_batches, plot='normal')
 # Clean up memory/GPU etc...
-#
+del model_A
 
 # ======================================================================================================================
 # Data preprocessing
