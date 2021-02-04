@@ -1,34 +1,39 @@
 # Import packages
-import numpy as np
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, UpSampling2D
-from tensorflow.keras import optimizers
-from Modules.utilities import psnr_metric, plot_history, progressbar, plot_results, plot_results_bicubic
-from tensorflow.keras.backend import get_value
+from tensorflow.keras.layers import Conv2D, UpSampling2D, Conv2DTranspose, MaxPooling2D, Add
+from tensorflow.keras import optimizers, Input, Model
+from Modules.utilities import *
+from tensorflow.keras.backend import get_value, square, mean
 from Modules.config import *
+from tensorflow import nn
 
 
 class A:
-    def __init__(self, input_shape):
+    def __init__(self, input_shape, loss='mse', scale=2):
         """
         Creates the object of the model.
 
         :param input_shape: size of the first layer input
         """
-        self.model = Sequential([
-            Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape),
-            Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same'),
-            UpSampling2D(),
-            Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same'),
-            Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same'),
-            UpSampling2D(),
-            # The sigmoid activation function guarantees that the final output are within the range [0,1]
-            Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')
-        ])
+        inputs = Input(shape=input_shape)
+        x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
+        x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        # x = Conv2DTranspose(filters=16, kernel_size=3, strides=2, activation='relu', padding='same')(x)
+        # x = Add()([x, x1])
+        x = Conv2D(16 * (scale ** 2), kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = nn.depth_to_space(x, scale)
+        x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        # The sigmoid activation function guarantees that the final output are within the range [0,1]
+        x = Conv2D(3 * (scale ** 2), kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
+        outputs = nn.depth_to_space(x, scale)
+
+        self.model = Model(inputs, outputs)
         # Prints a summary of the network
         self.model.summary()
         # Configures the model for training
-        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.01), loss='mse', metrics=[psnr_metric])
+        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.001), loss=loss,
+                           metrics=[psnr_metric, ssim_metric])
 
     def train(self, training_batches, valid_batches, epochs=25, verbose=1, plot=True):
         """
@@ -46,7 +51,7 @@ class A:
         history = self.model.fit(x=training_batches,
                                  steps_per_epoch=int((800 - test_dim) / batch_dim),
                                  validation_data=valid_batches,
-                                 validation_steps=int(200 / batch_dim),
+                                 validation_steps=int(100 / batch_dim),
                                  epochs=epochs,
                                  verbose=verbose)
         if plot:
@@ -68,8 +73,10 @@ class A:
         :return: the test metric score
         """
         # List of all the results
-        results = []
-        results_bicubic = []
+        results_psnr = []
+        results_ssim = []
+        results_bicubic_psnr = []
+        results_bicubic_ssim = []
         # Number of batches for the test set
         n_batches = int(test_dim / batch_dim)
         print('\nTesting phase started...')
@@ -80,17 +87,20 @@ class A:
             hr_test = batch[1]
             # The predictions are performed on the low resolution images
             predictions = self.model.predict_on_batch(x=lr_test)
-            # The PSNR values are computed comparing the predictions made with the related high resolution images
-            results.append(get_value(psnr_metric(hr_test, predictions)))
+            # The PSNR and SSIM values are computed comparing the predictions with the related high resolution images
+            results_psnr.append(get_value(psnr_metric(hr_test, predictions)))
+            results_ssim.append(get_value(ssim_metric(hr_test, predictions)))
             # If plot is not None the results are displayed [lr_image, (bicubic), prediction, ground truth]
             if plot == 'normal':
                 plot_results(lr_test, predictions, hr_test, title=True, ax=False)
             if plot == 'bicubic':
-                bicubic_results = plot_results_bicubic(lr_test, predictions, hr_test, title=True, ax=False)
-                results_bicubic.append(bicubic_results)
+                bicubic_psnr, bicubic_ssim = plot_results_bicubic(lr_test, predictions, hr_test, title=True, ax=False)
+                results_bicubic_psnr.append(bicubic_psnr)
+                results_bicubic_ssim.append(bicubic_ssim)
         if plot == 'bicubic':
-            print(f'Metric achieved trough simple Bicubic interpolation: {np.array(results_bicubic).mean()}')
+            print(f'\nPSNR achieved trough simple Bicubic interpolation: {np.array(results_bicubic_psnr).mean():.4f}',
+                  f'\nSSIM achieved trough simple Bicubic interpolation: {np.array(results_bicubic_ssim).mean():.4f}')
         # Compute the final result averaging all the values obtained
-        results = np.array(results).mean()
-        return results
-
+        results_psnr = np.array(results_psnr).mean()
+        results_ssim = np.array(results_ssim).mean()
+        return results_psnr, results_ssim

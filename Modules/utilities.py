@@ -2,7 +2,7 @@
 import os
 from tensorflow.keras.backend import get_value
 from Modules.pre_processing import load_dataset
-from tensorflow import keras, image
+from tensorflow import keras, image, clip_by_value, nn
 from Modules.config import *
 import shutil
 from pathlib import Path
@@ -151,7 +151,8 @@ def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True,
     """
     # Change seaborn style to avoid the presence of the grid within the plots
     sn.set_style("whitegrid", {'axes.grid': False})
-    results = []
+    results_psnr = []
+    results_ssim = []
     # Size of the bicubic HR image
     size = [patch_size * scale, patch_size * scale]
     # For the same starting image display its low-resolution, predicted and high-resolution versions.
@@ -159,9 +160,10 @@ def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True,
         # Create the bicubic image via a bicubic interpolation applied on the LR image.
         bicubic = image.resize(lr_image, size, method=image.ResizeMethod.BICUBIC)
         # Clip all the values that are not in the range [0,1] and that are created by the previous step.
-        bicubic = np.clip(bicubic, a_min=0, a_max=1)
-        # Compute the PSNR metric on every bicubic image obtained
-        results.append(get_value(psnr_metric(hr_image, bicubic)))
+        bicubic = clip_by_value(bicubic, clip_value_min=0, clip_value_max=1)
+        # Compute the PSNR and SSIM metrics on every bicubic image obtained
+        results_psnr.append(get_value(psnr_metric(hr_image, bicubic)))
+        results_ssim.append(get_value(ssim_metric(hr_image, bicubic)))
         # Create figure
         fig, axes = plt.subplots(1, 4, figsize=(20, 5.3))
         axes[0].imshow(lr_image)
@@ -182,20 +184,33 @@ def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True,
             axes[3].axis('off')
         plt.tight_layout()
         plt.show()
-    return results
+    return results_psnr, results_ssim
 
 
 def psnr_metric(true_img, pred_img):
     """
-    Computes the Peak signal-to-noise ratio (PSNR) on the images passed. The input can be list of images as well.
-    Nevertheless, in the latter case the two lists must have the same length.
+    Computes the Peak Signal-to-Noise Ratio (PSNR) on the images passed. The input can be a list of images
+    as well. Nevertheless, in this last case the two lists must have the same length.
 
     :param true_img: real image/images.
     :param pred_img: predicted image/images.
-    :return:
+    :return: the psnr metric computed on the inputs.
     """
     # The metric is computed exploiting the tf.image.psnr function provided by tensorflow
     return image.psnr(true_img, pred_img, max_val=1)
+
+
+def ssim_metric(true_img, pred_img):
+    """
+    Computes the Structural Similarity Index Measure (SSIM) on the images passed. The input can be a list of images
+    as well. Nevertheless, in this last case the two lists must have the same length.
+
+    :param true_img: real image/images.
+    :param pred_img: predicted image/images.
+    :return: the ssim metric computed on the inputs.
+    """
+    # The metric is computed exploiting the tf.image.ssim function provided by tensorflow
+    return image.ssim(true_img, pred_img, max_val=1)
 
 
 def plot_history(metric, val_metric, loss, val_loss, title=None):

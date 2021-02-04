@@ -28,11 +28,13 @@ input_shape = [patch_size, patch_size, 3]
 # Build model object.
 model_A = A(input_shape)
 # Train model based on the training set (you should fine-tune your model based on validation set).
-acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=2, verbose=2)
+acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=20, verbose=2)
 # Test model based on the test set.
-acc_A_test = model_A.test(test_batches, plot='normal')
+psnr_A_test, ssim_A_test = model_A.test(test_batches, plot='bicubic')
 # Clean up memory/GPU etc...
 del model_A
+print('\nTask {:<12} {:<12} {:<12} {:<12}\n'.format('Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
+      f'A:   {acc_A_train:<12.4f} {acc_A_valid:<12.4f} {psnr_A_test:<12.4f} {ssim_A_test:<12.4f}\n')
 
 # ======================================================================================================================
 # Data preprocessing
