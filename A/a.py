@@ -1,32 +1,31 @@
 # Import packages
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, UpSampling2D, Conv2DTranspose, MaxPooling2D, Add
-from tensorflow.keras import optimizers, Input, Model
+from tensorflow.keras import optimizers, Input, Model, losses
 from Modules.utilities import *
 from tensorflow.keras.backend import get_value, square, mean
 from Modules.config import *
-from tensorflow import nn
+from Modules.components import *
 
 
 class A:
-    def __init__(self, input_shape, loss='mse', scale=2):
+    def __init__(self, input_shape, loss='mse'):
         """
         Creates the object of the model.
 
         :param input_shape: size of the first layer input
+        :param loss: the loss selected. default_value='mse'
         """
+
         inputs = Input(shape=input_shape)
         x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
         x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same')(x)
-        # x = Conv2DTranspose(filters=16, kernel_size=3, strides=2, activation='relu', padding='same')(x)
-        # x = Add()([x, x1])
-        x = Conv2D(16 * (scale ** 2), kernel_size=(3, 3), activation='relu', padding='same')(x)
-        x = nn.depth_to_space(x, scale)
+        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
         x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
         x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
         # The sigmoid activation function guarantees that the final output are within the range [0,1]
-        x = Conv2D(3 * (scale ** 2), kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
-        outputs = nn.depth_to_space(x, scale)
+        outputs = SubPixelConv2D(channels=3, scale=2, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
+        # x = Conv2DTranspose(filters=16, kernel_size=3, strides=2, activation='relu', padding='same')(x)
+        # x = Add()([x, x1])
 
         self.model = Model(inputs, outputs)
         # Prints a summary of the network
