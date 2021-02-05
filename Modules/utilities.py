@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sn
 from sys import stdout
+from Modules.components import *
 
 
 def download_datasets(extract=True):
@@ -185,32 +186,6 @@ def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True,
         plt.tight_layout()
         plt.show()
     return results_psnr, results_ssim
-
-
-def psnr_metric(true_img, pred_img):
-    """
-    Computes the Peak Signal-to-Noise Ratio (PSNR) on the images passed. The input can be a list of images
-    as well. Nevertheless, in this last case the two lists must have the same length.
-
-    :param true_img: real image/images.
-    :param pred_img: predicted image/images.
-    :return: the psnr metric computed on the inputs.
-    """
-    # The metric is computed exploiting the tf.image.psnr function provided by tensorflow
-    return image.psnr(true_img, pred_img, max_val=1)
-
-
-def ssim_metric(true_img, pred_img):
-    """
-    Computes the Structural Similarity Index Measure (SSIM) on the images passed. The input can be a list of images
-    as well. Nevertheless, in this last case the two lists must have the same length.
-
-    :param true_img: real image/images.
-    :param pred_img: predicted image/images.
-    :return: the ssim metric computed on the inputs.
-    """
-    # The metric is computed exploiting the tf.image.ssim function provided by tensorflow
-    return image.ssim(true_img, pred_img, max_val=1)
 
 
 def plot_history(metric, val_metric, loss, val_loss, title=None):
