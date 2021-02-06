@@ -37,7 +37,7 @@ input_shape = [patch_size, patch_size, 3]
 # print('\n Task   {:<12} {:<12} {:<12} {:<12}\n'.format('Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
 #       f'B:     {acc_A_train:<12.4f} {acc_A_valid:<12.4f} {psnr_A_test:<12.4f} {ssim_A_test:<12.4f}\n')
 
-# Model B Task A =======================================================================================================
+# Model B Task A
 # Build model object.
 model_B = B(input_shape, loss='mse')
 # Train model based on the training set (you should fine-tune your model based on validation set).

@@ -10,12 +10,11 @@ from Modules.components import *
 class A:
     def __init__(self, input_shape, loss='mse'):
         """
-        Creates the object of the model.
+        Creates the model.
 
-        :param input_shape: size of the first layer input
+        :param input_shape: size of the input of the first layer.
         :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
         """
-
         inputs = Input(shape=input_shape)
         x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
         x = ResidualBlock(filters=16, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
@@ -39,9 +38,9 @@ class A:
         Trains the model for a fixed number of iterations on the entire dataset (epochs).
 
         :param training_batches: input data passed as batches of n examples.
-        :param valid_batches: batches of examples on which to evaluate the loss and model metrics after each epoch.
-            The model is not trained on them.
-        :param epochs: number of epochs utilised to train the model. default_value=25
+        :param valid_batches: batches of examples on which to evaluate the generalisation capability of the model and
+            other important key elements. The model is not trained on them.
+        :param epochs: number of epochs to train the model. default_value=25
         :param verbose: verbosity level. default_value=1.
         :param plot: if True it plots the learning and performance curves. default_value=True
         :return: the last metric values measured on the training and validation sets.
@@ -63,13 +62,13 @@ class A:
     def test(self, test_batches, plot=None):
         """
         Generates output predictions for the examples passed and compares them with the true images returning
-        the psnr metric gained.
+        the psnr and ssim metrics achieved.
 
         :param test_batches: input data passed as batches of n examples taken from the test dataset.
         :param plot: if 'normal' for every example considered a plot displaying the low-resolution, the prediction and
             the high-resolution images is shown. Otherwise, if 'bicubic' the bicubic up-sampling is also displayed.
             default_value=None
-        :return: the test metric score
+        :return: the test metric scores
         """
         # List of all the results
         results_psnr = []
