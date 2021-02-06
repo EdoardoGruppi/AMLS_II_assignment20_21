@@ -193,13 +193,51 @@ def plot_history(metric, val_metric, loss, val_loss, title=None):
     Plots the history of the training phase and validation phase. It compares, in two different subplots, the metric
     and the loss of the model.
 
-    :param metric: list of values achieved after every epoch.
-    :param val_metric: list of values achieved after every epoch.
-    :param loss: list of values measured after every epoch.
-    :param val_loss: list of values measured after every epoch.
+    :param metric: values of the metric measured after every epoch on the training set.
+    :param val_metric: values of the metric measured after every epoch on the validation set.
+    :param loss: values of the loss measured after every epoch on the training set.
+    :param val_loss: values of the loss measured after every epoch on the validation set.
     :param title: title of the figure displayed. default_value=None
     :return:
     """
+    sn.set()
+    fig, axes = plt.subplots(2, 1, sharex='all', figsize=(13, 8))
+    x_axis = list(range(1, len(metric) + 1))
+    # First subplot
+    axes[0].plot(x_axis, metric)
+    axes[0].plot(x_axis, val_metric)
+    axes[0].set(ylabel='PSNR')
+    axes[0].legend(['Train', 'Valid'], loc='lower right')
+    # Second subplot
+    axes[1].plot(x_axis, loss)
+    axes[1].plot(x_axis, val_loss)
+    axes[1].set(ylabel='Loss', xlabel='Epoch')
+    # Legend
+    axes[1].legend(['Train', 'Valid'], loc='upper right')
+    # If title==True insert titles
+    if title is not None:
+        fig.suptitle(title)
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_learning(metric, loss, val_metric, val_loss, title=None):
+    """
+    Plots the history of the training phase and validation phase for the GAN model. It compares, in two different
+    subplots, the metric and the loss of the model.
+
+    :param metric: values of the metric measured after every batch on the training set.
+    :param val_metric: values of the metric measured after every epoch on the validation set.
+    :param loss: values of the loss measured after every batch on the training set.
+    :param val_loss: values of the loss measured after every epoch on the validation set.
+    :param title: title of the figure displayed. default_value=None
+    :return:
+    """
+    # The values of the metric and the loss are measured after every batch during the training phase. The following
+    # lines enable to obtain the mean of the values related to each epoch
+    step = int((800 - test_dim) / batch_dim)
+    metric = [np.mean(metric[index:index + step]) for index in range(0, len(metric), step)]
+    loss = [np.mean(loss[index:index + step]) for index in range(0, len(loss), step)]
     sn.set()
     fig, axes = plt.subplots(2, 1, sharex='all', figsize=(13, 8))
     x_axis = list(range(1, len(metric) + 1))
