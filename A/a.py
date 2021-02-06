@@ -13,15 +13,15 @@ class A:
         Creates the object of the model.
 
         :param input_shape: size of the first layer input
-        :param loss: the loss selected. default_value='mse'
+        :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
         """
 
         inputs = Input(shape=input_shape)
         x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
-        x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=16, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
         x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
-        x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         # The sigmoid activation function guarantees that the final output are within the range [0,1]
         outputs = SubPixelConv2D(channels=3, scale=2, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
         # x = Conv2DTranspose(filters=16, kernel_size=3, strides=2, activation='relu', padding='same')(x)
