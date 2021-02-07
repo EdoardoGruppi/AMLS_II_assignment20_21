@@ -2,7 +2,7 @@
 import os
 from tensorflow.keras.backend import get_value
 from Modules.pre_processing import load_dataset
-from tensorflow import keras, image, clip_by_value, nn
+from tensorflow import keras, clip_by_value
 from Modules.config import *
 import shutil
 from pathlib import Path

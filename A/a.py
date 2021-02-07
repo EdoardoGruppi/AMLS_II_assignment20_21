@@ -4,6 +4,7 @@ from tensorflow.keras import optimizers, Input, Model, losses
 from Modules.utilities import *
 from tensorflow.keras.backend import get_value, square, mean
 from Modules.config import *
+
 from Modules.components import *
 
 
@@ -16,15 +17,17 @@ class A:
         :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
         """
         inputs = Input(shape=input_shape)
-        x = Conv2D(filters=16, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
-        x = ResidualBlock(filters=16, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
-        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
-        x = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x1)
+        x = Add()([x, x1])
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = Add()([x, x1])
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = Add()([x, x1])
+        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
         # The sigmoid activation function guarantees that the final output are within the range [0,1]
-        outputs = SubPixelConv2D(channels=3, scale=2, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
-        # x = Conv2DTranspose(filters=16, kernel_size=3, strides=2, activation='relu', padding='same')(x)
-        # x = Add()([x, x1])
+        outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
 
         self.model = Model(inputs, outputs)
         # Prints a summary of the network
@@ -79,7 +82,7 @@ class A:
         n_batches = int(test_dim / batch_dim)
         print('\nTesting phase started...')
         # For every batch...
-        for batch in progressbar(test_batches, 'Status', 30, iterable=False, iterations=n_batches):
+        for batch in progressbar(test_batches, iterations=n_batches):
             # ... the low nd high resolution images are extracted
             lr_test = batch[0]
             hr_test = batch[1]

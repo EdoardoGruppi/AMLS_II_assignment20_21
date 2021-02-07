@@ -16,6 +16,7 @@ Datasets/Test_HR
 .idea
 logs
 __pycache__
+bicubic preproc.py
 a.py
 History/
 amls_2_.py

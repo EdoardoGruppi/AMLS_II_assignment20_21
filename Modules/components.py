@@ -63,7 +63,7 @@ class ResidualBlock(Layer):
         x = self.conv2(x)
         # The scaling allows to stabilise the training when increasing the width of the architecture
         if self.scaling:
-            x = Lambda(lambda layer: layer * self.scaling)(x)
+            x = Lambda(lambda ingress: ingress * self.scaling)(x)
         outputs = Add()([inputs, x])
         return outputs
 
