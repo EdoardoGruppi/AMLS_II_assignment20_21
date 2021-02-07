@@ -110,11 +110,15 @@ class B:
         # Cycle on the epochs
         for epoch in range(1, epochs + 1):
             print(f'\nProcessing Epoch {epoch} out of {epochs} ... ')
-            for _ in tqdm(range(steps_per_epoch), desc=f"Epoch {epoch}/{epochs}: "):
+            for counter, batch in tqdm(enumerate(training_batches), desc=f"Epoch {epoch}/{epochs}: ",
+                                       total=steps_per_epoch):
+                if counter == steps_per_epoch:
+                    break
                 # Train the discriminator with the SR images predicted by the generator
                 self.discriminator.trainable = True
                 # Load a new batch of images
-                batch_LR, batch_HR = next(iter(training_batches))
+                batch_LR = batch[0]
+                batch_HR = batch[1]
                 # Get the results from the generator, i.e. SR images
                 batch_SR = self.generator.predict(batch_LR)
                 # Labels are 0 since the images are not real but created by the generator
@@ -175,9 +179,12 @@ class B:
         results_ssim = []
         loss_list = []
         # For every batch...
-        for step in range(n_batches):
+        for counter, batch in enumerate(batches):
+            if counter == n_batches:
+                break
             # ... the low nd high resolution images are extracted
-            batch_LR, batch_HR = next(iter(batches))
+            batch_LR = batch[0]
+            batch_HR = batch[1]
             # The predictions are performed on the low resolution images
             loss, psnr, ssim = self.generator.test_on_batch(x=batch_LR, y=batch_HR)
             # The PSNR and SSIM values are computed comparing the predictions with the related high resolution images
