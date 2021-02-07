@@ -259,7 +259,7 @@ def plot_learning(metric, loss, val_metric, val_loss, title=None):
     plt.show()
 
 
-def progressbar(iterable_object, prefix="", size=60, output=stdout, iterable=True, iterations=30):
+def progressbar(iterable_object, prefix="Status", size=30, output=stdout, iterable=False, iterations=30):
     """
     Displays a progress-bar animation, associated to a for cycle, inside a specified output "place".
 
