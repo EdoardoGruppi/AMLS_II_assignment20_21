@@ -1,11 +1,11 @@
 # Import packages
 from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalization
-from tensorflow import nn, image, reduce_mean
+from tensorflow import nn, image, reduce_mean, reshape, subtract, constant
 from tensorflow.keras.losses import MSE
 import tensorflow as tf
-from tensorflow.python.keras.engine import base_preprocessing_layer
 from tensorflow.python.keras.engine.base_preprocessing_layer import PreprocessingLayer
 from tensorflow.python.ops import image_ops
+import numpy as np
 
 
 class SubPixelConv2D(Layer):
@@ -127,6 +127,22 @@ class BicubicUpSampling2D(PreprocessingLayer):
     def compute_output_shape(self, input_shape):
         input_shape = tf.TensorShape(input_shape).as_list()
         return tf.TensorShape([input_shape[0], self.target_size, self.target_size, input_shape[3]])
+
+
+class DifferenceRGB(Layer):
+    def __init__(self, rgb_mean):
+        """
+        Preprocesses the images by subtracting the mean RGB value of the dataset.
+
+        :param rgb_mean: mean RGB value.
+        """
+        super(DifferenceRGB, self).__init__()
+        self.rgb_mean = reshape(constant(np.asarray(rgb_mean) / 255, dtype=tf.float32), [1, 1, 3])
+
+    @tf.function
+    def call(self, inputs):
+        outputs = subtract(inputs, self.rgb_mean)
+        return outputs
 
 
 def psnr_metric(true_img, pred_img):
