@@ -3,6 +3,9 @@ from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalizati
 from tensorflow import nn, image, reduce_mean
 from tensorflow.keras.losses import MSE
 import tensorflow as tf
+from tensorflow.python.keras.engine import base_preprocessing_layer
+from tensorflow.python.keras.engine.base_preprocessing_layer import PreprocessingLayer
+from tensorflow.python.ops import image_ops
 
 
 class SubPixelConv2D(Layer):
@@ -12,7 +15,7 @@ class SubPixelConv2D(Layer):
         https://arxiv.org/pdf/1609.05158.pdf.
 
         :param channels: number of channels of the output images. default_value=3
-        :param scale: upscale factor. default_value=2
+        :param scale: up-scaling factor. default_value=2
         :param kernel_size: the height and width of the 2D convolution filter. default_value=(3, 3)
         :param activation: activation function used. default_value='relu'
         :param padding: which padding to apply. It can be 'same' or 'valid'. default_value='same'
@@ -101,6 +104,31 @@ class SRResNetBlock(Layer):
         return outputs
 
 
+class BicubicUpSampling2D(PreprocessingLayer):
+    def __init__(self, scale, image_size):
+        """
+        Resizes the batched image input to target height and width using bicubic interpolation.
+
+        :param scale: up-scaling factor.
+        :param image_size: width or height of each input square image.
+        """
+        self.scale = scale
+        self.target_size = image_size * scale
+        self._interpolation_method = image_ops.ResizeMethod.BICUBIC
+        super(BicubicUpSampling2D, self).__init__()
+
+    @tf.function
+    def call(self, inputs):
+        outputs = image_ops.resize_images_v2(images=inputs, size=[self.target_size, self.target_size],
+                                             method=self._interpolation_method)
+        return outputs
+
+    @tf.function
+    def compute_output_shape(self, input_shape):
+        input_shape = tf.TensorShape(input_shape).as_list()
+        return tf.TensorShape([input_shape[0], self.target_size, self.target_size, input_shape[3]])
+
+
 def psnr_metric(true_img, pred_img):
     """
     Computes the Peak Signal-to-Noise Ratio (PSNR) on the images passed. The input can be a list of images
@@ -140,7 +168,7 @@ def ssim_loss(true_img, pred_img):
 
 
 def new_loss(true_img, pred_img):
-    weight = 3
+    weight = 2
     loss_mse = reduce_mean(MSE(true_img, pred_img))
-    loss_ssim = ssim_loss(true_img, pred_img)
+    loss_ssim = (1 / reduce_mean(image.ssim(true_img, pred_img, max_val=1.0))) - 1
     return loss_ssim + (loss_mse * weight)
