@@ -2,7 +2,9 @@
 
 [Project](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21.git) ~ [Guide](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21/blob/main/Instructions.md)
 
-**Important:** the Datasets folder is empty however the datasets will be downloaded automatically running the main.py. 
+Describe Tasks!! Check the role of each file!!
+
+**Important:** the Datasets folder is empty since the datasets will be downloaded automatically running the main.py.
 
 ## How to start
 
@@ -12,8 +14,8 @@ The packages required for the execution of the code along with the role of each 
 
 ## Packages required
 
-The following lists gather all the packages needed to run the project code.
-Please note that the descriptions provided in this subsection are taken directly from the package source pages. For more details it is reccomended to directly reference to their official sites.
+Althoug the following list gather all the most important packages needed to run the project code, a more comprehensive overview is provided in the file [requirements.txt](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21/blob/main/requirements.txt). The latter can also be directly used to install the packages by typing the specific command on the terminal.
+Please note that the descriptions provided in this subsection are taken directly from the package source pages. For more details it is reccomended to directly reference to the related official websites.
 
 **Compulsory :**
 
@@ -31,33 +33,29 @@ Please note that the descriptions provided in this subsection are taken directly
 
 - **Matplotlib** is a comprehensive library for creating static, animated, and interactive visualizations in Python.
 
-- **Sklearn** offers simple and efficient tools for predictive data analysis.
-
-- **Skimage** is a collection of algorithms for image processing.
-
-- **Random** implements pseudo-random number generators for various distributions.
-
 - **Seaborn** is a data visualization library based on matplotlib that provides a high-level interface for drawing attractive and informative statistical graphics.
 
-- **Cv2** is an open-source library that includes several hundreds of computer vision algorithms.
+- **Tqdm:** allows to display a smart progress meter to represent the status of a precise loop.
 
-- **Face_recognition** is useful to recognize and manipulate faces with the world’s simplest face recognition library. Built from dlib’s state-of-the-art deep learning library.
+- **Sys** provides functions to manipulate different parts of the Python runtime environment.
 
 ## Role of each file
 
-**main.py** is the starting point of the entire project. It defines the order in which instructions are realised. More precisely, it is responsible to call functions from other files in order to divide the datasets provided, pre-process images and instantiate, train and test models.
+**main.py** is the starting point of the entire project. It defines the order in which instructions are realised. More precisely, it is responsible to call functions from other files in order to divide the datasets provided, pre-process images as well as to instantiate, train and test the models.
 
-**a.py** change name
+**a.py** contains the class A from which to instantiate the (CNN) model for (Task A). Once the model is created, it provides functions in order to be trained and also to generate Super Resolution images starting from Low Resolution pictures.
 
-**b.py** change name
+**b.py** contains the class B from which to instantiate the (GAN) model for (Task B). Once the model is created, it provides functions in order to be trained and also to generate Super Resolution images starting from Low Resolution pictures.
 
 **config.py** makes available all the global variables used in the project.
 
-**pre_processing.py** control
+**pre_processing.py** provides crucial functions related to the preparation of the batches. In particular, this module enables to create tensorflow specific objects that correspond to the training, validation and test datasets. Whenever it is needed, a batch is created by iterating this objects. Specifically a batch is a set of pairs of low resolution and high resolution images that are cropped and that can be randomly rotated and flipped.
 
-**results_visualization.py** control
+**utilities.py** includes functions to download and split the datasets in the dedicated folder, to compute the mean RGB value of the dataset and to plot results and other important elements.
 
-**\_Additional_code folder** control
+**components.py** contains custom layers created specifically for this project as well as the metrics and losses adopted during the training phases.
+
+**\_Additional_code folder** includes some .py files useful for the code devolepment as well as to report some of the most noteworthy experiments conducted throughout the project.
 
 ## Software used
 

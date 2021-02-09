@@ -24,7 +24,7 @@
 
 ## Run the code
 
-Once all the necessary packages have been installed you can run the code by typing this line on the terminal or by a specific command within the IDE.
+Once all the necessary packages have been installed you can run the code by typing this line on the terminal or by the specific command within the IDE.
 
 **Note:** To follow step by step the main execution take a look at the dedicated Section below.
 
