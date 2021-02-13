@@ -27,9 +27,9 @@ train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_siz
 # Task A
 input_shape = [patch_size, patch_size, 3]
 # Build model object.
-model_A = A(input_shape, loss='mse')
+model_A = A(input_shape, loss='mae')
 # Train model based on the training set (you should fine-tune your model based on validation set).
-acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=40, verbose=2)
+acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=60, verbose=2)
 # Test model based on the test set.
 psnr_A_test, ssim_A_test = model_A.test(test_batches, plot='bicubic')
 # Clean up memory/GPU etc...
@@ -40,9 +40,9 @@ print('\n Task   {:<12} {:<12} {:<12} {:<12}\n'.format('Train Psnr', 'Valid Psnr
 
 # # Model B Task A
 # # Build model object.
-# model_B = B(input_shape, loss='mse')
+# model_B = B(input_shape, loss='mae')
 # # Train model based on the training set (you should fine-tune your model based on validation set).
-# acc_B_train, acc_B_valid = model_B.train(train_batches, valid_batches, epochs=10, plot=True)
+# acc_B_train, acc_B_valid = model_B.train(train_batches, valid_batches, epochs=5, plot=True)
 # # # Test model based on the test set.
 # psnr_B_test, ssim_B_test = model_B.test(test_batches, plot='bicubic')
 # # Clean up memory/GPU etc...

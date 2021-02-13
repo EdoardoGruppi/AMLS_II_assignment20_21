@@ -1,10 +1,8 @@
 # Import packages
-from tensorflow.keras.layers import Conv2D, UpSampling2D, Conv2DTranspose, MaxPooling2D, Add
-from tensorflow.keras import optimizers, Input, Model, losses
+from tensorflow.keras import optimizers, Input, Model
 from Modules.utilities import *
-from tensorflow.keras.backend import get_value, square, mean
+from tensorflow.keras.backend import get_value
 from Modules.config import *
-
 from Modules.components import *
 
 
@@ -17,11 +15,22 @@ class A:
         :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
         """
         inputs = Input(shape=input_shape)
-        x1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same', input_shape=input_shape)(inputs)
+        x = DifferenceRGB(RGB_MEAN_A)(inputs)
+        x1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x1)
-        x = Add()([x, x1])
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = Add()([x, x1])
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = Add()([x, x1])
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = Add()([x, x1])
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = Add()([x, x1])
         x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
