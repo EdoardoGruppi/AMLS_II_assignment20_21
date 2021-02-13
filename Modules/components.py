@@ -1,5 +1,6 @@
 # Import packages
-from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalization
+from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalization, UpSampling2D, Conv2DTranspose
+from tensorflow.keras.layers import MaxPooling2D
 from tensorflow import nn, image, reduce_mean, reshape, subtract, constant
 from tensorflow.keras.losses import MSE
 import tensorflow as tf
@@ -71,6 +72,14 @@ class ResidualBlock(Layer):
         return outputs
 
 
+# There is an issue not yet fixed in tensorflow 2.1 that happens when custom layers or subclassed models use the
+# BatchNormalization layer. The problem seems to be solved in tensorflow nightly version or by avoiding the decorator
+# @tf.function. In each case, it could be better to copy and paste the lines commented below directly in the a.py file.
+# x = Conv2D(filters=16, kernel_size=3, activation='relu', padding='same')(inputs)
+# x = BatchNormalization(momentum=0.5)(x)
+# x = Conv2D(filters=16, kernel_size=3, activation=None, padding='same')(x)
+# x = BatchNormalization(momentum=0.5)(x)
+# outputs = Add([inputs, x])
 class SRResNetBlock(Layer):
     def __init__(self, filters=16, momentum=0.5, kernel_size=(3, 3), activation='relu', padding='same'):
         """
@@ -94,7 +103,7 @@ class SRResNetBlock(Layer):
         self.batch1 = BatchNormalization(momentum=momentum)
         self.batch2 = BatchNormalization(momentum=momentum)
 
-    @tf.function
+    # @tf.function
     def call(self, inputs):
         x = self.conv1(inputs)
         x = self.batch1(x)
