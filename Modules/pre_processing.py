@@ -115,3 +115,28 @@ def pre_processing(lr_image, hr_image, crop_size, rotation=True, flip=True, scal
         lr_image = image.rot90(lr_image, n_times)
         hr_image = image.rot90(hr_image, n_times)
     return lr_image, hr_image
+
+
+def prepare_custom_test_batches(folder_path, crop_size=48, batch_size=10, rotation=True, flip=True):
+    """
+    Prepares batches exclusively for an additional test dataset. Each element of the batches is composed by two
+    images: Low and High resolution.
+
+    :param folder_path: path of the folder in which the images are saved.
+    :param crop_size: dimension of the square images extracted from the original ones. default_value=96
+    :param batch_size: size of each batch. default_value=10
+    :param rotation: if True images can be randomly rotated. default_value=True
+    :param flip: if True images can be randomly and horizontally flipped. default_value=True
+    :return: the batches prepared
+    """
+    # List of paths regarding all the low and high resolution images
+    lr_images_list = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.endswith('LR.png', 9)]
+    hr_images_list = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.endswith('HR.png', 9)]
+    # Creates a Dataset by zipping together the loaded datasets
+    data_set = data.Dataset.zip((load_dataset(lr_images_list), load_dataset(hr_images_list)))
+    # Preprocess each element of the obtained dataset
+    data_set = data_set.map(lambda lr_image, hr_image: pre_processing(lr_image, hr_image, crop_size, rotation, flip),
+                            num_parallel_calls=AUTOTUNE)
+    # Combines consecutive elements of the dataset into batches
+    data_set = data_set.batch(batch_size)
+    return data_set
