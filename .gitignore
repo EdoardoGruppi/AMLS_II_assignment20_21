@@ -13,6 +13,10 @@ Datasets/Valid_HR_cached
 Datasets/Test_A
 Datasets/Test_B
 Datasets/Test_HR
+Datasets/Set5
+Datasets/Set14
+Datasets/Urban100
+Datasets/BSD100
 .idea
 logs
 __pycache__
