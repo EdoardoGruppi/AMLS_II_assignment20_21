@@ -1,6 +1,6 @@
 # Import packages
 from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalization, UpSampling2D, Conv2DTranspose
-from tensorflow.keras.layers import MaxPooling2D
+from tensorflow.keras.layers import MaxPooling2D, GlobalAveragePooling2D, Multiply, Reshape, Dense
 from tensorflow import nn, image, reduce_mean, reshape, subtract, constant
 from tensorflow.keras.losses import MSE
 import tensorflow as tf
@@ -46,7 +46,8 @@ class ResidualBlock(Layer):
         BatchNormalization layer involved as well as no activation function after the skip connection.
 
         :param filters: the number of output filters in the convolution. default_value=16
-        :param scaling: factor defining the constant scaling layer. default_value=None
+        :param scaling: factor defining the constant scaling layer. This can be very helpful to stabilise the
+            training. default_value=None
         :param kernel_size: the height and width of the 2D convolution filter. default_value=(3, 3)
         :param activation: activation function used. default_value='relu'
         :param padding: which padding to apply. It can be 'same' or 'valid'. default_value='same'
@@ -151,6 +152,32 @@ class DifferenceRGB(Layer):
     @tf.function
     def call(self, inputs):
         outputs = subtract(inputs, self.rgb_mean)
+        return outputs
+
+
+class ChannelAttention(Layer):
+    def __init__(self, filters, activation='relu', reduce=16):
+        """
+
+
+        :param filters:
+        :param activation:
+        :param reduce:
+        """
+        super(ChannelAttention, self).__init__()
+        self.filters = filters
+        self.activation = activation
+        self.global_average_pooling = GlobalAveragePooling2D()
+        self.dense1 = Dense(int(filters / reduce), activation=activation, use_bias=False)
+        self.dense2 = Dense(filters, activation='sigmoid', use_bias=False)
+
+    @tf.function
+    def call(self, inputs):
+        x = self.global_average_pooling(inputs)
+        x = Reshape((1, 1, self.filters))(x)
+        x = self.dense1(x)
+        x = self.dense2(x)
+        outputs = Multiply()([x, inputs])
         return outputs
 
 
