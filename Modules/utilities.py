@@ -28,27 +28,29 @@ def download_datasets(extract=True):
     # Name of the new folders wherein the images will be moved
     new_folders = ['Valid_A', 'Valid_B', 'Valid_HR', 'Train_A', 'Train_B', 'Train_HR']
     for filename, folder in zip(filenames, new_folders):
+        # Originate the url from where to download the dataset
         source_url = dataset_url + filename + '.zip'
-        # Download a file from a URL if not already downloaded and processed
-        origin = folder + '_cached'
-        if origin not in os.listdir(target_dir):
+        # Download the content from the URL if not already downloaded and processed
+        if folder not in os.listdir(target_dir):
             # Download the folder
-            keras.utils.get_file(origin, source_url, cache_subdir=target_dir, extract=extract)
+            keras.utils.get_file(folder, source_url, cache_subdir=target_dir, extract=extract)
+            # Remove the additional file downloaded
+            os.remove(os.path.join(target_dir, folder))
             # The images are in a sub-folder within the folder downloaded. To facilitate the handling of the images,
             # they are moved in a folder dedicated and easier to access.
+            # old_dir is the folder or sub-folder where the images are downloaded
+            old_dir = filename
             if 'X4' in filename:
-                old_folder = os.path.join(filename[:-3], 'X4')
-            else:
-                old_folder = filename
+                filename = filename[:-3]
+                old_dir = os.path.join(filename, 'X4')
             # Obtain the path to the new and old folders
-            old_dir = os.path.join(target_dir, old_folder)
+            old_dir = os.path.join(target_dir, old_dir)
             new_dir = os.path.join(target_dir, folder)
             # Move the images from one folder to another
             shutil.move(old_dir, new_dir)
             # Delete the old folder
-            old_dir = os.path.join(target_dir, filename.split('_X4')[0])
-            if os.path.exists(old_dir):
-                shutil.rmtree(old_dir)
+            old_dir = os.path.join(target_dir, filename)
+            shutil.rmtree(old_dir, ignore_errors=True)
 
 
 def download_test_datasets(scale=4):
