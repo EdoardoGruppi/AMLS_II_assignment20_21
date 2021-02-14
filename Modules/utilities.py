@@ -32,6 +32,7 @@ def download_datasets(extract=True):
         # Download a file from a URL if not already downloaded and processed
         origin = folder + '_cached'
         if origin not in os.listdir(target_dir):
+            # Download the folder
             keras.utils.get_file(origin, source_url, cache_subdir=target_dir, extract=extract)
             # The images are in a sub-folder within the folder downloaded. To facilitate the handling of the images,
             # they are moved in a folder dedicated and easier to access.
@@ -48,6 +49,61 @@ def download_datasets(extract=True):
             old_dir = os.path.join(target_dir, filename.split('_X4')[0])
             if os.path.exists(old_dir):
                 shutil.rmtree(old_dir)
+
+
+def download_test_datasets(scale=4):
+    """
+    Downloads the test datasets (Set5, Set14, Urban100, BSD100) and prepare their folders to facilitate their
+    management.
+
+    :param scale: scale difference between the two images. default_value=4
+    """
+    # Absolute path needed to save the files retrieved within the Datasets folder
+    target_dir = os.path.abspath(base_dir)
+    # URLs from which to download the test datasets
+    urls = [set5_url, set14_url, urban100_url, bsd100_url]
+    # Name of the content to download
+    new_folders = ['Set5_SR', 'Set14_SR', 'Urban100', 'BSD100_SR']
+    # List containing the final filename part of the images that will be kept
+    final_part = ('HR.png', 'LR.png')
+    # Name of the sub folder that from which the images will be retrieved
+    sub_folder_name = f'image_SRF_{scale}'
+    # Cycle across all the selected test datasets
+    for url, folder in zip(urls, new_folders):
+        # Name of the folder downloaded
+        directory = folder.split('_')[0]
+        # Download the specific folder from the URL if not already downloaded and processed
+        if directory not in os.listdir(target_dir):
+            # Folder where to download the content
+            new_dir = target_dir
+            # Unfortunately the folders downloaded have a different structure. The following if-else is needed to
+            # create a folder for the 'Urban100' or 'BSD100_SR' where to insert the content downloaded. Only following
+            # this procedure the final structure of all the folders becomes the same.
+            if folder in new_folders[-2:]:
+                # Create a new directory where to insert the content downloaded for one of the following datasets:
+                # 'Urban100' and 'BSD100_SR'.
+                new_dir = os.path.join(target_dir, directory)
+                os.mkdir(new_dir)
+            # Download the folder
+            keras.utils.get_file(folder, url, cache_subdir=new_dir, extract=True)
+            # Remove the additional file downloaded
+            os.remove(os.path.join(new_dir, folder))
+            # Get the path to the folder downloaded
+            directory = os.path.join(target_dir, directory)
+            # List of all the sub-folders within the folder downloaded
+            sub_folders = [item for item in os.listdir(directory)]
+            # Path of the sub-folder from which the images are collected
+            sub_directory = os.path.join(directory, sub_folder_name)
+            # List of all the images inside the sub-folder selected
+            file_list = os.listdir(sub_directory)
+            # Keep only all the images that end with one of the strings in final_part
+            file_list = [file for file in file_list if file.endswith(final_part, 14)]
+            # Move the images selected outside the sub folder but inside the folder downloaded
+            for file in file_list:
+                shutil.move(os.path.join(sub_directory, file), directory)
+            # Delete all the sub-folders
+            for sub_folder in sub_folders:
+                shutil.rmtree(os.path.join(directory, sub_folder), ignore_errors=True)
 
 
 def split_dataset(test_size=100):
@@ -185,6 +241,32 @@ def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True,
             axes[3].axis('off')
         plt.tight_layout()
         plt.show()
+    return results_psnr, results_ssim
+
+
+def compute_results_bicubic(lr_images, predictions, hr_images, scale=4):
+    """
+    Plots a comparison among the low-resolution image, the predicted image, the ground truth image and the high
+    resolution image obtained through bicubic interpolation for every tuple of images passed.
+
+    :param lr_images: list of the low-resolution images.
+    :param predictions: list of the predicted images.
+    :param hr_images: list of the high-resolution images.
+    :param scale: scale difference between the two images. default_value=4
+    :return:
+    """
+    results_psnr, results_ssim = [], []
+    # Size of the bicubic HR image
+    size = [patch_size * scale, patch_size * scale]
+    # For the same starting image display its low-resolution, predicted and high-resolution versions.
+    for lr_image, pred_image, hr_image in zip(lr_images, predictions, hr_images):
+        # Create the bicubic image via a bicubic interpolation applied on the LR image.
+        bicubic = image.resize(lr_image, size, method=image.ResizeMethod.BICUBIC)
+        # Clip all the values that are not in the range [0,1] and that are created by the previous step.
+        bicubic = clip_by_value(bicubic, clip_value_min=0, clip_value_max=1)
+        # Compute the PSNR and SSIM metrics on every bicubic image obtained
+        results_psnr.append(get_value(psnr_metric(hr_image, bicubic)))
+        results_ssim.append(get_value(ssim_metric(hr_image, bicubic)))
     return results_psnr, results_ssim
 
 
