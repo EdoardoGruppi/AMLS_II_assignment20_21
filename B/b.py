@@ -1,5 +1,5 @@
 # Import packages
-from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import Flatten, InputLayer
 from tensorflow.keras import optimizers, Input, Model
 from Modules.utilities import *
 from tensorflow.keras.backend import get_value
@@ -38,7 +38,6 @@ def create_generator(kernel_size=(3, 3), activation='relu', padding='same'):
     x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
     x = Add()([x, x1])
     x = SubPixelConv2D(channels=16, scale=2, kernel_size=kernel_size, activation=activation, padding=padding)(x)
-    x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
     # The sigmoid activation function guarantees that the final output are within the range [0,1]
     outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
     return Model(inputs=inputs, outputs=outputs)
@@ -56,10 +55,7 @@ def create_discriminator(input_shape, kernel_size=(3, 3), activation='relu', pad
     :return: the discriminator model.
     """
     inputs = Input(input_shape)
-    x = Conv2D(filters=16, kernel_size=kernel_size, activation=activation, padding=padding)(inputs)
-    x = Conv2D(filters=16, kernel_size=kernel_size, activation=activation, padding=padding)(x)
-    x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
-    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
+    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(inputs)
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
@@ -318,15 +314,26 @@ class B:
                                metrics=[psnr_metric, ssim_metric])
         self.generator.summary()
         # New Discriminator
+        # Get the size of the input of the new discriminator
         discriminator_input_shape = [input_shape[0] * scale, input_shape[1] * scale, 3]
+        # Get the size of the input of the current discriminator
+        current_input_shape = self.discriminator.input[0][0].shape[0]
+        # Compute the down-scaling that is needed to transform the new input shape to the old input shape
+        difference = current_input_shape/discriminator_input_shape[0]
+        # Add before the old discriminator model a custom bicubic down sampling layer
         inputs = Input(discriminator_input_shape)
-        self.discriminator = Model(inputs=inputs, outputs=self.discriminator.outputs)
+        x = BicubicUpSampling2D(scale=difference, image_size=discriminator_input_shape[0])(inputs)
+        # Connect the layer at the old discriminator
+        outputs = self.discriminator(x)
+        self.discriminator = Model(inputs=inputs, outputs=outputs)
         self.discriminator.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(learning_rate=0.001))
         self.discriminator.summary()
         # New Model
         # Join the two parts in order to obtain the new GAN model
+        inputs = Input(input_shape)
         x = self.generator(inputs)
         outputs = self.discriminator(x)
         self.model = Model(inputs=inputs, outputs=[x, outputs])
         # Compile the GAN model
         self.model.compile(loss=[loss, "binary_crossentropy"], optimizer=optimizers.Adam(learning_rate=0.001))
+        self.model.summary()

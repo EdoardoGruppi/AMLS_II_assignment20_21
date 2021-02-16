@@ -123,7 +123,7 @@ class BicubicUpSampling2D(PreprocessingLayer):
         :param image_size: width or height of each input square image.
         """
         self.scale = scale
-        self.target_size = image_size * scale
+        self.target_size = int(image_size * scale)
         self._interpolation_method = image_ops.ResizeMethod.BICUBIC
         super(BicubicUpSampling2D, self).__init__()
 
