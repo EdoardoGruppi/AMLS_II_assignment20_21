@@ -4,7 +4,7 @@
 
 Describe Tasks!! Check the role of each file!!
 
-**Important:** the Datasets folder is empty since the datasets will be downloaded automatically running the main.py.
+**Important: the Datasets folder is empty since the datasets will be downloaded automatically running the main.py.**
 
 ## How to start
 

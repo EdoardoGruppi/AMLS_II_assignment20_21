@@ -22,53 +22,65 @@ def download_datasets(extract=True):
     # Absolute path needed to save the files retrieved within the Datasets folder
     target_dir = os.path.abspath(base_dir)
     # Names of the file to download from the specified url
-    filenames = ['DIV2K_valid_LR_bicubic_X4', 'DIV2K_valid_LR_unknown_X4', 'DIV2K_valid_HR',
-                 'DIV2K_train_LR_bicubic_X4', 'DIV2K_train_LR_unknown_X4', 'DIV2K_train_HR']
+    filenames = [['DIV2K_valid_LR_bicubic_X2', 'DIV2K_valid_LR_bicubic_X3', 'DIV2K_valid_LR_bicubic_X4'],
+                 ['DIV2K_valid_LR_unknown_X2', 'DIV2K_valid_LR_unknown_X3', 'DIV2K_valid_LR_unknown_X4'],
+                 ['DIV2K_valid_HR'],
+                 ['DIV2K_train_LR_bicubic_X2', 'DIV2K_train_LR_bicubic_X3', 'DIV2K_train_LR_bicubic_X4'],
+                 ['DIV2K_train_LR_unknown_X2', 'DIV2K_train_LR_unknown_X3', 'DIV2K_train_LR_unknown_X4'],
+                 ['DIV2K_train_HR']]
     # Name of the new folders wherein the images will be moved
     new_folders = ['Valid_A', 'Valid_B', 'Valid_HR', 'Train_A', 'Train_B', 'Train_HR']
     for filename, folder in zip(filenames, new_folders):
         # Originate the url from where to download the dataset
-        source_url = dataset_url + filename + '.zip'
+        source_url = [dataset_url + name + '.zip' for name in filename]
         # Download the content from the URL if not already downloaded and processed
         if folder not in os.listdir(target_dir):
-            # Download the folder
-            keras.utils.get_file(folder, source_url, cache_subdir=target_dir, extract=extract)
-            # Remove the additional file downloaded
-            os.remove(os.path.join(target_dir, folder))
-            # The images are in a sub-folder within the folder downloaded. To facilitate the handling of the images,
-            # they are moved in a folder dedicated and easier to access.
-            # old_dir is the folder or sub-folder where the images are downloaded
-            old_dir = filename
-            if 'X4' in filename:
-                filename = filename[:-3]
-                old_dir = os.path.join(filename, 'X4')
-            # Obtain the path to the new and old folders
-            old_dir = os.path.join(target_dir, old_dir)
+            # Name of the additional file that is mandatory to download the content.
+            origin = folder + '_Additional_file'
+            # Create the folder in which images must be moved once downloaded
             new_dir = os.path.join(target_dir, folder)
-            # Move the images from one folder to another
-            shutil.move(old_dir, new_dir)
-            # Delete the old folder
-            old_dir = os.path.join(target_dir, filename)
-            shutil.rmtree(old_dir, ignore_errors=True)
+            os.mkdir(new_dir)
+            # Retrieve the url of the folder to download and its related name
+            for url, name in zip(source_url, filename):
+                # Download the folder
+                keras.utils.get_file(origin, url, cache_subdir=target_dir, extract=extract)
+                # Remove the additional file downloaded
+                os.remove(os.path.join(target_dir, origin))
+                # The images are in a sub-folder within the folder downloaded. To facilitate the handling of the images,
+                # they are moved in a folder dedicated and easier to access.
+                # old_dir is the folder or sub-folder where the images are downloaded
+                old_dir = name
+                # If the images are in low resolution they are saved in a sub_folder within the folder downloaded.
+                # For instance 'DIV2K_train_LR_bicubic_X2' are in the path ./Datasets//DIV2K_train_LR_bicubic//X2
+                if 'X' in name:
+                    sub_folder = name[-2:]
+                    name = name[:-3]
+                    old_dir = os.path.join(name, sub_folder)
+                # Obtain the path to the new and old folders
+                old_dir = os.path.join(target_dir, old_dir)
+                # Move the images from one folder (old_dir) to another (new_dir)
+                for file in os.listdir(old_dir):
+                    shutil.move(os.path.join(old_dir, file), new_dir)
+                # Delete the old folder
+                old_dir = os.path.join(target_dir, name)
+                shutil.rmtree(old_dir, ignore_errors=True)
 
 
-def download_test_datasets(scale=4):
+def download_test_datasets():
     """
-    Downloads the test datasets (Set5, Set14, Urban100, BSD100) and prepare their folders to facilitate their
+    Downloads the test datasets (Set5, Set14, BSD100) and prepare their folders to facilitate their
     management.
-
-    :param scale: scale difference between the two images. default_value=4
     """
     # Absolute path needed to save the files retrieved within the Datasets folder
     target_dir = os.path.abspath(base_dir)
     # URLs from which to download the test datasets
-    urls = [set5_url, set14_url, urban100_url, bsd100_url]
+    urls = [set5_url, set14_url, bsd100_url]
     # Name of the content to download
-    new_folders = ['Set5_SR', 'Set14_SR', 'Urban100', 'BSD100_SR']
+    new_folders = ['Set5_SR', 'Set14_SR', 'BSD100_SR']
     # List containing the final filename part of the images that will be kept
     final_part = ('HR.png', 'LR.png')
-    # Name of the sub folder that from which the images will be retrieved
-    sub_folder_name = f'image_SRF_{scale}'
+    # All the scales considered
+    scales = [2, 3, 4]
     # Cycle across all the selected test datasets
     for url, folder in zip(urls, new_folders):
         # Name of the folder downloaded
@@ -80,7 +92,7 @@ def download_test_datasets(scale=4):
             # Unfortunately the folders downloaded have a different structure. The following if-else is needed to
             # create a folder for the 'Urban100' or 'BSD100_SR' where to insert the content downloaded. Only following
             # this procedure the final structure of all the folders becomes the same.
-            if folder in new_folders[-2:]:
+            if folder == 'BSD100_SR':
                 # Create a new directory where to insert the content downloaded for one of the following datasets:
                 # 'Urban100' and 'BSD100_SR'.
                 new_dir = os.path.join(target_dir, directory)
@@ -91,17 +103,21 @@ def download_test_datasets(scale=4):
             os.remove(os.path.join(new_dir, folder))
             # Get the path to the folder downloaded
             directory = os.path.join(target_dir, directory)
-            # List of all the sub-folders within the folder downloaded
+            # List of all the sub-folders and files within the folder once downloaded
             sub_folders = [item for item in os.listdir(directory)]
-            # Path of the sub-folder from which the images are collected
-            sub_directory = os.path.join(directory, sub_folder_name)
-            # List of all the images inside the sub-folder selected
-            file_list = os.listdir(sub_directory)
-            # Keep only all the images that end with one of the strings in final_part
-            file_list = [file for file in file_list if file.endswith(final_part, 14)]
-            # Move the images selected outside the sub folder but inside the folder downloaded
-            for file in file_list:
-                shutil.move(os.path.join(sub_directory, file), directory)
+            # Cycle across the different scales
+            for scale in scales:
+                # Name of the sub folder that from which the images will be retrieved
+                sub_folder_name = f'image_SRF_{scale}'
+                # Path of the sub-folder from which the images are collected
+                sub_directory = os.path.join(directory, sub_folder_name)
+                # List of all the images inside the sub-folder selected
+                file_list = os.listdir(sub_directory)
+                # Keep only all the images that end with one of the strings in final_part
+                file_list = [file for file in file_list if file.endswith(final_part, 14)]
+                # Move the images selected outside the sub folder but inside the folder downloaded
+                for file in file_list:
+                    shutil.move(os.path.join(sub_directory, file), directory)
             # Delete all the sub-folders
             for sub_folder in sub_folders:
                 shutil.rmtree(os.path.join(directory, sub_folder), ignore_errors=True)
@@ -117,10 +133,18 @@ def split_dataset(test_size=100):
     train_folders = ['Train_A', 'Train_B', 'Train_HR']
     # Name of the new folders wherein the images will be moved.
     test_folders = ['Test_A', 'Test_B', 'Test_HR']
+    # Cycle across all the folders (A, B, HR)
     for train_folder, test_folder in zip(train_folders, test_folders):
+        # Since in the training folder (A, B) the images are saved as follows: 0001x2.png, 0001x3.png, 0001x4.png,
+        # 0002x2.png, 0002x3.png, 0002x4.png, etc, it is possible to move the last test_size images for each
+        # resolution moving the last 3 * test_size images within the folder. Obviously from the HR folder only the
+        # last test_size images will be moved.
+        test_dimension = test_size * 3
+        if 'HR' in train_folder:
+            test_dimension = test_size
         # Train folder path
         train_folder = os.path.join(base_dir, train_folder)
-        test_images = sorted(os.listdir(train_folder))[-test_size:]
+        test_images = sorted(os.listdir(train_folder))[-test_dimension:]
         # Test folder path
         test_folder = os.path.join(base_dir, test_folder)
         # Division is made only if the test directory does not already exist
