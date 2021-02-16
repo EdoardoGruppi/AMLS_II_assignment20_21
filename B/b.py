@@ -21,7 +21,6 @@ def create_generator(kernel_size=(3, 3), activation='relu', padding='same'):
     inputs = Input(shape=(None, None, 3))
     # Since the residual blocks have skip connection inside it is necessary that their inputs are equal to their
     # outputs in terms of depth, width and height.
-    # filters = 16
     x = DifferenceRGB(RGB_MEAN_A)(inputs)
     x1 = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x1)
@@ -56,6 +55,9 @@ def create_discriminator(input_shape, kernel_size=(3, 3), activation='relu', pad
     """
     inputs = Input(input_shape)
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(inputs)
+    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
+    x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
+    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
