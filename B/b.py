@@ -258,7 +258,7 @@ class B:
         :return:
         """
         # List of the folders containing the test datasets
-        test_datasets_folders = ['Set5', 'Set14', 'Urban100', 'BSD100']
+        test_datasets_folders = ['Set5', 'Set14', 'BSD100']
         print('\nTest executed on the additional test datasets:',
               '\n{:<10} {:<25} {:<25}'.format('Dataset', 'Bicubic', 'Model'))
         # For every folder name

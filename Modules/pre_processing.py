@@ -5,7 +5,7 @@ from tensorflow import data, io, image, random, shape, int32
 from tensorflow.python.data.experimental import AUTOTUNE
 
 
-def prepare_batches(crop_size=96, batch_size=10, task='A', rotation=True, flip=True):
+def prepare_batches(crop_size=96, batch_size=10, task='A', rotation=True, flip=True, scale=4):
     """
     Prepares the train, test and valid batches.
 
@@ -14,6 +14,7 @@ def prepare_batches(crop_size=96, batch_size=10, task='A', rotation=True, flip=T
     :param task: it can be equal to 'A' or 'B' according to the task performed. default_value='A'
     :param rotation: if True images can be randomly rotated. default_value=True
     :param flip: if True images can be randomly and horizontally flipped. default_value=True
+    :param scale: scale difference between the two images. default_value=4
     :return: the train, test and valid batches.
     """
     # Get the path of the train, valid and test folders
@@ -21,14 +22,16 @@ def prepare_batches(crop_size=96, batch_size=10, task='A', rotation=True, flip=T
     valid_dir = os.path.join(base_dir, 'Valid_' + task)
     test_dir = os.path.join(base_dir, 'Test_' + task)
     # Call the create_dataset function to obtain the batches from the datasets
-    train_batches = create_dataset(train_dir, batch_size=batch_size, crop_size=crop_size, rotation=rotation, flip=flip)
-    valid_batches = create_dataset(valid_dir, batch_size=batch_size, crop_size=crop_size, rotation=rotation, flip=flip)
-    test_batches = create_dataset(test_dir, batch_size=batch_size, crop_size=crop_size, rotation=rotation, flip=flip,
-                                  repetition=False)
+    train_batches = create_dataset(train_dir, batch_size=batch_size, crop_size=crop_size, rotation=rotation,
+                                   flip=flip, scale=scale, repetition=True)
+    valid_batches = create_dataset(valid_dir, batch_size=batch_size, crop_size=crop_size, rotation=rotation,
+                                   flip=flip, scale=scale, repetition=True)
+    test_batches = create_dataset(test_dir, batch_size=batch_size, crop_size=crop_size, rotation=rotation,
+                                  flip=flip, scale=scale, repetition=False)
     return train_batches, valid_batches, test_batches
 
 
-def create_dataset(lr_path, batch_size, crop_size, rotation=True, flip=True, repetition=True):
+def create_dataset(lr_path, batch_size, crop_size, rotation=True, flip=True, repetition=True, scale=4):
     """
     Creates the batches given the path of the low resolution dataset.
 
@@ -39,18 +42,20 @@ def create_dataset(lr_path, batch_size, crop_size, rotation=True, flip=True, rep
     :param flip: if True images can be randomly and horizontally flipped. default_value=True
     :param repetition: if True the dataset is repeated indefinitely. It should be True for the training and valid
         batches and false for the test batches. default_value=True
+    :param scale: scale difference between the two images. default_value=4
     :return: the dataset divided in batches
     """
     # Get the path of the related folder containing the high resolution images
     hr_path = lr_path.split('_')[0] + '_HR'
     # List of paths regarding all the low and high resolution images
-    lr_images_list = [os.path.join(lr_path, item) for item in os.listdir(lr_path)]
+    lr_images_list = [os.path.join(lr_path, item) for item in os.listdir(lr_path) if item.endswith(f'x{scale}.png', 4)]
     hr_images_list = [os.path.join(hr_path, item) for item in os.listdir(hr_path)]
     # Creates a Dataset by zipping together the loaded datasets
     data_set = data.Dataset.zip((load_dataset(lr_images_list), load_dataset(hr_images_list)))
     # Preprocess each element of the obtained dataset
-    data_set = data_set.map(lambda lr_image, hr_image: pre_processing(lr_image, hr_image, crop_size, rotation, flip),
-                            num_parallel_calls=AUTOTUNE)
+    data_set = data_set.map(
+        lambda lr_image, hr_image: pre_processing(lr_image, hr_image, crop_size, rotation, flip, scale),
+        num_parallel_calls=AUTOTUNE)
     # Combines consecutive elements of the dataset into batches
     data_set = data_set.batch(batch_size)
     if repetition:
@@ -117,7 +122,7 @@ def pre_processing(lr_image, hr_image, crop_size, rotation=True, flip=True, scal
     return lr_image, hr_image
 
 
-def prepare_custom_test_batches(folder_path, crop_size=48, batch_size=10, rotation=True, flip=True):
+def prepare_custom_test_batches(folder_path, crop_size=48, batch_size=10, rotation=True, flip=True, scale=4):
     """
     Prepares batches exclusively for an additional test dataset. Each element of the batches is composed by two
     images: Low and High resolution.
@@ -127,16 +132,20 @@ def prepare_custom_test_batches(folder_path, crop_size=48, batch_size=10, rotati
     :param batch_size: size of each batch. default_value=10
     :param rotation: if True images can be randomly rotated. default_value=True
     :param flip: if True images can be randomly and horizontally flipped. default_value=True
+    :param scale: scale difference between the two images. default_value=4
     :return: the batches prepared
     """
     # List of paths regarding all the low and high resolution images
-    lr_images_list = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.endswith('LR.png', 9)]
-    hr_images_list = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if item.endswith('HR.png', 9)]
+    lr_images_list = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if
+                      item.endswith(f'{scale}_LR.png', 12)]
+    hr_images_list = [os.path.join(folder_path, item) for item in os.listdir(folder_path) if
+                      item.endswith(f'{scale}_HR.png', 12)]
     # Creates a Dataset by zipping together the loaded datasets
     data_set = data.Dataset.zip((load_dataset(lr_images_list), load_dataset(hr_images_list)))
     # Preprocess each element of the obtained dataset
-    data_set = data_set.map(lambda lr_image, hr_image: pre_processing(lr_image, hr_image, crop_size, rotation, flip),
-                            num_parallel_calls=AUTOTUNE)
+    data_set = data_set.map(
+        lambda lr_image, hr_image: pre_processing(lr_image, hr_image, crop_size, rotation, flip, scale),
+        num_parallel_calls=AUTOTUNE)
     # Combines consecutive elements of the dataset into batches
     data_set = data_set.batch(batch_size)
     return data_set
