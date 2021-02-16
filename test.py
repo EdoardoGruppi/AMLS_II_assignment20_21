@@ -14,79 +14,132 @@ if len(physical_devices) is not 0:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 # ======================================================================================================================
-# Download dataset
+# Download datasets
 download_datasets()
 download_test_datasets()
 split_dataset(test_size=test_dim)
 input_shape = [patch_size, patch_size, 3]
 
 # ======================================================================================================================
+# Task A - Ratio x2
+results_A2 = []
+scale = 2
 # Data preprocessing
 train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
-                                                             task='A', rotation=True, flip=True, scale=4)
-
-# ======================================================================================================================
-# Task A
+                                                             task='A', rotation=True, flip=True, scale=scale)
 # Build model object.
 model_A = A(input_shape, loss='mae')
 # Train model based on the training set (you should fine-tune your model based on validation set).
-acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=2, verbose=2)
+results_A2.append(model_A.train(train_batches, valid_batches, epochs=1, verbose=2))
 # Test model based on the test set.
-psnr_A_test, ssim_A_test = model_A.test(test_batches, plot=True)
+results_A2.append(model_A.test(test_batches, plot=False, scale=scale))
 # Test model on the additional test datasets
-model_A.additional_tests(plot=False)
+model_A.additional_tests(plot=False, scale=scale)
 # Clean up memory/GPU etc...
-del model_A
-# Delete the following two lines
-print('\n{:<12} {:<12} {:<12} {:<12} {:<12}\n'.format('Task', 'Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
-      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('A', acc_A_train, acc_A_valid, psnr_A_test,
-                                                                ssim_A_test))
-# # Model B Task A
-# # Build model object.
-# model_B = B(input_shape, loss='mae')
-# # Train model based on the training set (you should fine-tune your model based on validation set).
-# acc_B_train, acc_B_valid = model_B.train(train_batches, valid_batches, epochs=2, plot=True)
-# # # Test model based on the test set.
-# psnr_B_test, ssim_B_test = model_B.test(test_batches, plot=True)
-# # Test model on the additional test datasets
-# model_B.additional_tests(plot=False)
-# # Clean up memory/GPU etc...
-# print('\n Task   {:<12} {:<12} {:<12} {:<12}\n'.format('Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
-#       f'B:     {acc_B_train:<12.4f} {acc_B_valid:<12.4f} {psnr_B_test:<12.4f} {ssim_B_test:<12.4f}\n')
+# del model_A
 
 # ======================================================================================================================
+# Task A - Ratio x3
+results_A3 = []
+scale = 3
 # Data preprocessing
-# train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
-#                                                              task='B', rotation=True, flip=True)
-
-# # ====================================================================================================================
-# # Task A
-# # Build model object.
-# model_A = A(input_shape, loss='mse')
-# # Train model based on the training set (you should fine-tune your model based on validation set).
-# acc_A_train, acc_A_valid = model_A.train(train_batches, valid_batches, epochs=10, verbose=2)
-# # Test model based on the test set.
-# psnr_A_test, ssim_A_test = model_A.test(test_batches, plot=True)
-# # Clean up memory/GPU etc...
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
+                                                             task='A', rotation=True, flip=True, scale=scale)
+# Change model object.
+model_A.new_scale(scale=scale, loss='mae')
+# Train model based on the training set (you should fine-tune your model based on validation set).
+results_A3.append(model_A.train(train_batches, valid_batches, epochs=2, verbose=2))
+# Test model based on the test set.
+results_A3.append(model_A.test(test_batches, plot=True, scale=scale))
+# Test model on the additional test datasets
+model_A.additional_tests(plot=False, scale=scale)
+# Clean up memory/GPU etc...
 # del model_A
-# # Print results
-# print('\n Task   {:<12} {:<12} {:<12} {:<12}\n'.format('Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
-#       f'A:     {acc_A_train:<12.4f} {acc_A_valid:<12.4f} {psnr_A_test:<12.4f} {ssim_A_test:<12.4f}\n')
 
-# Task B
+# ======================================================================================================================
+# Task A - Ratio x4
+results_A4 = []
+scale = 4
+# Data preprocessing
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
+                                                             task='A', rotation=True, flip=True, scale=scale)
+# Change model object.
+model_A.new_scale(scale=scale, loss='mae')
+# Train model based on the training set (you should fine-tune your model based on validation set).
+results_A4.append(model_A.train(train_batches, valid_batches, epochs=2, verbose=2))
+# Test model based on the test set.
+results_A4.append(model_A.test(test_batches, plot=True, scale=scale))
+# Test model on the additional test datasets
+model_A.additional_tests(plot=False, scale=scale)
+# Clean up memory/GPU etc...
+del model_A
+
+# ======================================================================================================================
+# Task B - Ratio x2
+results_B2 = []
+scale = 2
+# Data preprocessing
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
+                                                             task='B', rotation=True, flip=True, scale=scale)
 # Build model object.
-# model_B = B(input_shape, loss='mse')
-# # Train model based on the training set (you should fine-tune your model based on validation set).
-# acc_B_train, acc_B_valid = model_B.train(train_batches, valid_batches, epochs=10, plot=True)
-# # # Test model based on the test set.
-# psnr_B_test, ssim_B_test = model_B.test(test_batches, plot=True)
-# # Clean up memory/GPU etc...
-# #
-# print('\n Task   {:<12} {:<12} {:<12} {:<12}\n'.format('Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
-#       f'B:     {acc_B_train:<12.4f} {acc_B_valid:<12.4f} {psnr_B_test:<12.4f} {ssim_B_test:<12.4f}\n')
-#
-# # ====================================================================================================================
-# ## Print out your results with following format:
-# print('\n Task   {:<12} {:<12} {:<12}\n'.format('Train Acc', 'Valid Acc', 'Test Acc'),
-#       f'A:     {acc_A_train:<12.4f} {acc_A_valid:<12.4f} {acc_A_test:<12.4f}\n',
-#       f'B:     {acc_B_train:<12.4f} {acc_B_valid:<12.4f} {acc_B_test:<12.4f}\n')
+model_B = B(input_shape, loss='mae')
+# Train model based on the training set (you should fine-tune your model based on validation set).
+results_B2.append(model_B.train(train_batches, valid_batches, epochs=1))
+# Test model based on the test set.
+results_B2.append(model_B.test(test_batches, plot=False, scale=scale))
+# Test model on the additional test datasets
+model_B.additional_tests(plot=False, scale=scale)
+# Clean up memory/GPU etc...
+# del model_B
+
+# ======================================================================================================================
+# Task B - Ratio x3
+results_B3 = []
+scale = 3
+# Data preprocessing
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
+                                                             task='B', rotation=True, flip=True, scale=scale)
+# Change model object.
+model_B.new_scale(input_shape=input_shape, scale=scale, loss='mae')
+# Train model based on the training set (you should fine-tune your model based on validation set).
+results_B3.append(model_B.train(train_batches, valid_batches, epochs=2))
+# Test model based on the test set.
+results_B3.append(model_B.test(test_batches, plot=True, scale=scale))
+# Test model on the additional test datasets
+model_B.additional_tests(plot=False, scale=scale)
+# Clean up memory/GPU etc...
+# del model_B
+
+# ======================================================================================================================
+# Task B - Ratio x4
+results_B4 = []
+scale = 4
+# Data preprocessing
+train_batches, valid_batches, test_batches = prepare_batches(crop_size=patch_size, batch_size=batch_dim,
+                                                             task='B', rotation=True, flip=True, scale=scale)
+# Change model object.
+model_B.new_scale(input_shape=input_shape, scale=scale, loss='mae')
+# Train model based on the training set (you should fine-tune your model based on validation set).
+results_B4.append(model_B.train(train_batches, valid_batches, epochs=2))
+# Test model based on the test set.
+results_B4.append(model_B.test(test_batches, plot=True, scale=scale))
+# Test model on the additional test datasets
+model_B.additional_tests(plot=False, scale=scale)
+# Clean up memory/GPU etc...
+# del model_B
+
+# ======================================================================================================================
+# Print out the results:
+print('\n{:<12} {:<12} {:<12} {:<12} {:<12}\n'.format('Task', 'Train Psnr', 'Valid Psnr', 'Test Psnr', 'Test Ssim'),
+      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('A', results_A2[0], results_A2[1], results_A2[2],
+                                                                results_A2[3]),
+      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('A', results_A3[0], results_A3[1], results_A3[2],
+                                                                results_A3[3]),
+      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('A', results_A4[0], results_A4[1], results_A4[2],
+                                                                results_A4[3]),
+      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('B', results_B2[0], results_B2[1], results_B2[2],
+                                                                results_B2[3]),
+      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('B', results_B3[0], results_B3[1], results_B3[2],
+                                                                results_B3[3]),
+      '{:<12} {:<12.4f} {:<12.4f} {:<12.4f} {:<12.4f}\n'.format('B', results_B4[0], results_B4[1], results_B4[2],
+                                                                results_B4[3]))

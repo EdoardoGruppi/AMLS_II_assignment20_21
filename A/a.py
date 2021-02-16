@@ -72,7 +72,7 @@ class A:
         # Return the last metric values achieved on the training and validation datasets
         return history.history['psnr_metric'][-1], history.history['val_psnr_metric'][-1]
 
-    def test(self, test_batches, plot=False):
+    def test(self, test_batches, plot=False, scale=4):
         """
         Generates output predictions for the examples passed and compares them with the true images returning
         the psnr and ssim metrics achieved.
@@ -80,6 +80,7 @@ class A:
         :param test_batches: input data passed as batches of n examples taken from the test dataset.
         :param plot: if True for every example considered a plot displaying the low-resolution, the bicubic
             interpolation, the prediction and the high-resolution images is shown. default_value=False
+        :param scale: the up-scaling ratio desired. default_value=4
         :return: the test metric scores
         """
         # List of all the results
@@ -99,42 +100,41 @@ class A:
             results_psnr.append(get_value(psnr_metric(hr_test, predictions)))
             results_ssim.append(get_value(ssim_metric(hr_test, predictions)))
             # The PSNR and SSIM values are computed comparing the bicubic images with the related HR images
-            bicubic_psnr, bicubic_ssim = compute_results_bicubic(lr_test, predictions, hr_test)
+            bicubic_psnr, bicubic_ssim = compute_results_bicubic(lr_test, predictions, hr_test, scale=scale)
             results_bicubic_psnr.append(bicubic_psnr)
             results_bicubic_ssim.append(bicubic_ssim)
             # If plot is True the results are displayed [lr_image, bicubic, prediction, ground truth]
             if plot:
-                _, _ = plot_results_bicubic(lr_test, predictions, hr_test, title=True, ax=False)
+                _, _ = plot_results_bicubic(lr_test, predictions, hr_test, title=True, ax=False, scale=scale)
         # Compute the final result averaging all the values obtained
         results_psnr = np.hstack(results_psnr).mean()
         results_ssim = np.hstack(results_ssim).mean()
         results_bicubic_psnr = np.hstack(results_bicubic_psnr).mean()
         results_bicubic_ssim = np.hstack(results_bicubic_ssim).mean()
-        print('\nTest executed on the DIV2k test dataset:',
+        print('\nTest executed on the following test datasets:',
               '\n{:<10} {:<25} {:<25}'.format('Dataset', 'Bicubic', 'Model'),
               '\n{:<10} {:<25} {:<25}'.format('DIV2k', f'{results_bicubic_psnr:.4f} / {results_bicubic_ssim:.4f}',
                                               f'{results_psnr:.4f} / {results_ssim:.4f}'))
         return results_psnr, results_ssim
 
-    def additional_tests(self, plot=False):
+    def additional_tests(self, plot=False, scale=4):
         """
         Generates output predictions for the examples from the additional test_datasets and compares them with the true
         images returning the psnr and ssim metrics achieved by the model and through a bicubic interpolation.
 
         :param plot: if True for every example considered a plot displaying the low-resolution, the bicubic
             interpolation, the prediction and the high-resolution images is shown. default_value=False
+        :param scale: the up-scaling ratio desired. default_value=4
         :return:
         """
         # List of the folders containing the test datasets
         test_datasets_folders = ['Set5', 'Set14', 'BSD100']
-        print('\nTest executed on the additional test datasets:',
-              '\n{:<10} {:<25} {:<25}'.format('Dataset', 'Bicubic', 'Model'))
         # For every folder name
         for folder in test_datasets_folders:
             # Find the folder path
             folder_path = os.path.join(base_dir, folder)
             # Prepare the batches related to the current test dataset
-            batches = prepare_custom_test_batches(folder_path, patch_size)
+            batches = prepare_custom_test_batches(folder_path, patch_size, scale=scale)
             # Iterate across the batches generated to get the results
             results_psnr, results_ssim = [], []
             results_bicubic_psnr, results_bicubic_ssim = [], []
@@ -148,12 +148,12 @@ class A:
                 results_psnr.append(get_value(psnr_metric(hr_test, predictions)))
                 results_ssim.append(get_value(ssim_metric(hr_test, predictions)))
                 # The PSNR and SSIM values are computed comparing the bicubic images with the related HR images
-                bicubic_psnr, bicubic_ssim = compute_results_bicubic(lr_test, predictions, hr_test)
+                bicubic_psnr, bicubic_ssim = compute_results_bicubic(lr_test, predictions, hr_test, scale=scale)
                 results_bicubic_psnr.append(bicubic_psnr)
                 results_bicubic_ssim.append(bicubic_ssim)
                 # If plot is True the results are displayed as well. [lr_image, bicubic, prediction, ground truth]
                 if plot:
-                    _, _ = plot_results_bicubic(lr_test, predictions, hr_test, title=True, ax=False)
+                    _, _ = plot_results_bicubic(lr_test, predictions, hr_test, title=True, ax=False, scale=scale)
             # Compute the final result averaging all the values obtained
             results_psnr = np.hstack(results_psnr).mean()
             results_ssim = np.hstack(results_ssim).mean()
@@ -161,3 +161,24 @@ class A:
             results_bicubic_ssim = np.hstack(results_bicubic_ssim).mean()
             print('{:<10} {:<25} {:<25}'.format(folder, f'{results_bicubic_psnr:.4f} / {results_bicubic_ssim:.4f}',
                                                 f'{results_psnr:.4f} / {results_ssim:.4f}'))
+
+    def new_scale(self, scale=2, loss='mae'):
+        """
+        Changes only the last layer of the model to support different up-scaling ratios.
+
+        :param scale: the up-scaling ratio desired. default_value=2
+        :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
+        :return:
+        """
+        # Remove the last two layers of the model
+        x = self.model.layers[-3].output
+        # Replace them with the new layers
+        x = SubPixelConv2D(channels=16, scale=scale, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        # The sigmoid activation function guarantees that the final output are within the range [0,1]
+        outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
+        # Over subscribe the old model with the new model
+        self.model = Model(inputs=self.model.input, outputs=outputs)
+        self.model.summary()
+        # Configures the model for training
+        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.001), loss=loss,
+                           metrics=[psnr_metric, ssim_metric])
