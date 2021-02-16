@@ -15,7 +15,7 @@ bsd100_url = 'https://uofi.box.com/shared/static/qgctsplb8txrksm9to9x01zfa4m61ng
 # and, number of validation images / batch_dim returns an integer
 # and, number of test images / batch_dim returns an integer
 batch_dim = 10
-patch_size = 48
+patch_size = 56
 test_dim = 20
 
 # Channel-wise Mean computed on the entire training DIV2K dataset. The mean is computed via the compute_dataset_mean()

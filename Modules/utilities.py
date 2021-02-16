@@ -6,7 +6,6 @@ from tensorflow import keras, clip_by_value
 from Modules.config import *
 import shutil
 from pathlib import Path
-import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sn
 from sys import stdout

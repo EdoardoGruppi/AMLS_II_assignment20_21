@@ -25,18 +25,17 @@ class A:
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
-        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = Add()([x, x1])
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = Add()([x, x1])
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
-        x = Add()([x, x1])
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = Add()([x, x1])
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
+        x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = Add()([x, x1])
-        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
-        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = SubPixelConv2D(channels=16, scale=4, kernel_size=(3, 3), activation='relu', padding='same')(x)
         # The sigmoid activation function guarantees that the final output are within the range [0,1]
         outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
 
@@ -135,7 +134,7 @@ class A:
             # Find the folder path
             folder_path = os.path.join(base_dir, folder)
             # Prepare the batches related to the current test dataset
-            batches = prepare_custom_test_batches(folder_path, patch_size, )
+            batches = prepare_custom_test_batches(folder_path, patch_size)
             # Iterate across the batches generated to get the results
             results_psnr, results_ssim = [], []
             results_bicubic_psnr, results_bicubic_ssim = [], []
