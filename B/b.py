@@ -1,5 +1,5 @@
 # Import packages
-from tensorflow.keras.layers import Flatten, InputLayer
+from tensorflow.keras.layers import Flatten, MaxPooling2D
 from tensorflow.keras import optimizers, Input, Model
 from Modules.utilities import *
 from tensorflow.keras.backend import get_value
@@ -7,6 +7,8 @@ from Modules.pre_processing import prepare_custom_test_batches
 from Modules.config import *
 from Modules.components import *
 from tqdm import tqdm
+from tensorflow.keras.applications import VGG16
+from tensorflow.keras.backend import mean, square
 
 
 def create_generator(kernel_size=(3, 3), activation='relu', padding='same'):
@@ -64,7 +66,6 @@ def create_discriminator(input_shape, kernel_size=(3, 3), activation='relu', pad
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
     x = Flatten()(x)
-    x = Dense(8, activation='relu')(x)
     x = Dense(1, activation='sigmoid')(x)
     return Model(inputs=inputs, outputs=x)
 
@@ -76,8 +77,15 @@ class B:
 
         :param input_shape: size of the input of the first layer.
         :param scale: the up-scaling ratio desired. default_value=4
-        :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
+        :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss, vgg and new_loss. default_value='mse'
         """
+        # If the loss selected is the content loss, aka perceptual loss or vgg loss.
+        if loss == 'vgg':
+            # Load the pre-trained model VGG16 without including the top
+            self.vgg_model = VGG16(include_top=False)
+            # Assign the vgg_loss as the loss adopted during the training phase
+            loss = self.vgg_loss
+
         # Input of the generative model
         inputs = Input(shape=input_shape)
         # Input shape of the discriminative model
@@ -339,3 +347,20 @@ class B:
         # Compile the GAN model
         self.model.compile(loss=[loss, "binary_crossentropy"], optimizer=optimizers.Adam(learning_rate=0.001))
         self.model.summary()
+
+    def vgg_loss(self, image_true, image_pred):
+        """
+        Evaluates the image quality based on its perceptual quality comparing the high level features of the
+        generated image and the ground truth image. The features are extracted from the outputs of one of the
+        middle-final layers of the vgg network.
+
+        :param image_true: ground truth image.
+        :param image_pred: predicted image.
+        :return:
+        """
+        # Extract high features from the predicted image
+        features_pred = self.vgg_model(image_pred)
+        # Extract high features from the true image
+        features_true = self.vgg_model(image_true)
+        # Return the mean square error computed on the images representations extracted
+        return mean(square(features_true - features_pred))

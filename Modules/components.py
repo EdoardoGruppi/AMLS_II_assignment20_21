@@ -1,6 +1,6 @@
 # Import packages
-from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalization, UpSampling2D, Conv2DTranspose
-from tensorflow.keras.layers import MaxPooling2D, GlobalAveragePooling2D, Multiply, Reshape, Dense
+from tensorflow.keras.layers import Layer, Conv2D, Lambda, Add, BatchNormalization
+from tensorflow.keras.layers import GlobalAveragePooling2D, Multiply, Reshape, Dense
 from tensorflow import nn, image, reduce_mean, reshape, subtract, constant
 from tensorflow.keras.losses import MSE
 import tensorflow as tf
