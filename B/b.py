@@ -311,6 +311,9 @@ class B:
         :return:
         """
         # New Generator
+        # If the loss required is the perceptual loss
+        if loss == 'vgg':
+            loss = self.vgg_loss
         # Remove the last two layers of the generator
         x = self.generator.layers[-3].output
         # Replace them with the new layers
@@ -332,6 +335,7 @@ class B:
         difference = current_input_shape/discriminator_input_shape[0]
         # Add before the old discriminator model a custom bicubic down sampling layer
         inputs = Input(discriminator_input_shape)
+        # Downscale the input to match the original input shape of the discriminator
         x = BicubicUpSampling2D(scale=difference, image_size=discriminator_input_shape[0])(inputs)
         # Connect the layer at the old discriminator
         outputs = self.discriminator(x)

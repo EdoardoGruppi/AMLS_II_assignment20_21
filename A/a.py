@@ -173,6 +173,9 @@ class A:
         :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss and new_loss. default_value='mse'
         :return:
         """
+        # If the loss required is the perceptual loss
+        if loss == 'vgg':
+            loss = self.vgg_loss
         # Remove the last two layers of the model
         x = self.model.layers[-3].output
         # Replace them with the new layers
