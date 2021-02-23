@@ -200,7 +200,7 @@ def plot_results(lr_images, predictions, hr_images, ax=True, title=True):
     # For the same starting image display its low-resolution, predicted and high-resolution versions.
     for lr_image, pred_image, hr_image in zip(lr_images, predictions, hr_images):
         # Create figure
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5.3))
+        fig, axes = plt.subplots(1, 3, figsize=(11.3, 4))
         axes[0].imshow(lr_image)
         axes[1].imshow(pred_image)
         axes[2].imshow(hr_image)
@@ -247,7 +247,7 @@ def plot_results_bicubic(lr_images, predictions, hr_images, ax=True, title=True,
         results_psnr.append(get_value(psnr_metric(hr_image, bicubic)))
         results_ssim.append(get_value(ssim_metric(hr_image, bicubic)))
         # Create figure
-        fig, axes = plt.subplots(1, 4, figsize=(20, 5.3))
+        fig, axes = plt.subplots(1, 4, figsize=(15, 4))
         axes[0].imshow(lr_image)
         axes[1].imshow(bicubic)
         axes[2].imshow(pred_image)
@@ -308,7 +308,7 @@ def plot_history(metric, val_metric, loss, val_loss, title=None):
     :return:
     """
     sn.set()
-    fig, axes = plt.subplots(2, 1, sharex='all', figsize=(13, 8))
+    fig, axes = plt.subplots(2, 1, sharex='all', figsize=(10, 6.5))
     x_axis = list(range(1, len(metric) + 1))
     # First subplot
     axes[0].plot(x_axis, metric)
@@ -346,7 +346,7 @@ def plot_learning(metric, loss, val_metric, val_loss, title=None):
     metric = [np.mean(metric[index:index + step]) for index in range(0, len(metric), step)]
     loss = [np.mean(loss[index:index + step]) for index in range(0, len(loss), step)]
     sn.set()
-    fig, axes = plt.subplots(2, 1, sharex='all', figsize=(13, 8))
+    fig, axes = plt.subplots(2, 1, sharex='all', figsize=(10, 6.5))
     x_axis = list(range(1, len(metric) + 1))
     # First subplot
     axes[0].plot(x_axis, metric)
