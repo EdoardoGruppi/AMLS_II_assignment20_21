@@ -21,7 +21,9 @@ class A:
         # If the loss selected is the content loss, aka perceptual loss or vgg loss.
         if loss == 'vgg':
             # Load the pre-trained model VGG16 without including the top
-            self.vgg_model = VGG16(include_top=False)
+            model = VGG16(include_top=False)
+            model.trainable = False
+            self.vgg_model = Model([model.input], model.get_layer('block5_conv2').output, name='vggL')
             # Assign the vgg_loss as the loss adopted during the training phase
             loss = self.vgg_loss
 
@@ -46,7 +48,7 @@ class A:
         # Prints a summary of the network
         self.model.summary()
         # Configures the model for training
-        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.001), loss=loss,
+        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.0001), loss=loss,
                            metrics=[psnr_metric, ssim_metric])
 
     def train(self, training_batches, valid_batches, epochs=25, verbose=1, plot=True):
@@ -186,7 +188,7 @@ class A:
         self.model = Model(inputs=self.model.input, outputs=outputs)
         self.model.summary()
         # Configures the model for training
-        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.001), loss=loss,
+        self.model.compile(optimizer=optimizers.Adam(learning_rate=0.0001), loss=loss,
                            metrics=[psnr_metric, ssim_metric])
 
     def vgg_loss(self, image_true, image_pred):
@@ -203,5 +205,6 @@ class A:
         features_pred = self.vgg_model(image_pred)
         # Extract high features from the true image
         features_true = self.vgg_model(image_true)
-        # Return the mean square error computed on the images representations extracted
-        return mean(square(features_true - features_pred))
+        # Return the mean square error computed on the images representations extracted plus the original MSE
+        loss = mean(square(features_true - features_pred)) + mean(square(image_true - image_pred))
+        return loss
