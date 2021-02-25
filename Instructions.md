@@ -54,6 +54,8 @@ The models designed are evaluated on further well-known benchmark datasets as we
 
 **CNN model for Task A**
 
+Root Network
+
 ```python
 inputs = Input(shape=input_shape)
 x = DifferenceRGB(RGB_MEAN_A)(inputs)
@@ -68,14 +70,19 @@ x = Add()([x, x1])
 x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
 x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
 x = Add()([x, x1])
-x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
+```
+
+Final part for the x2, x3, x4 ratios
+
+```python
+x = SubPixelConv2D(channels=16, scale=ratio, kernel_size=(3, 3), activation='relu', padding='same')(x)
 # The sigmoid activation function guarantees that the final output are within the range [0,1]
 outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
 ```
 
 **GAN model for Task B**
 
-Generative model:
+Root network of the generative model
 
 ```python
 inputs = Input(shape=input_shape)
@@ -91,12 +98,17 @@ x = Add()([x, x1])
 x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
 x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
 x = Add()([x, x1])
-x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
+```
+
+Final part of the generative model for the x2, x3, x4 ratios
+
+```python
+x = SubPixelConv2D(channels=16, scale=ratio, kernel_size=(3, 3), activation='relu', padding='same')(x)
 # The sigmoid activation function guarantees that the final output are within the range [0,1]
 outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
 ```
 
-Discriminative model:
+Root network of the discriminative model
 
 ```python
 inputs = Input(input_shape)
@@ -111,6 +123,14 @@ x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=p
 x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
 x = Flatten()(x)
 outputs = Dense(1, activation='sigmoid')(x)
+```
+
+Initial part added to the discriminative model for only the x3,x4 ratios
+
+```python
+inputs = Input(new_input_shape)
+difference = current_input_shape / new_input_shape
+x = BicubicUpSampling2D(scale=difference, image_size=discriminator_input_shape[0])(inputs)
 ```
 
 ## Main execution
