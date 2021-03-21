@@ -24,7 +24,7 @@ def create_generator(kernel_size=(3, 3), activation='relu', padding='same'):
     inputs = Input(shape=(None, None, 3))
     # Since the residual blocks have skip connection inside it is necessary that their inputs are equal to their
     # outputs in terms of depth, width and height.
-    x = DifferenceRGB(RGB_MEAN_A)(inputs)
+    x = DifferenceRGB(RGB_MEAN_B)(inputs)
     x1 = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x1)
     x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
@@ -36,7 +36,7 @@ def create_generator(kernel_size=(3, 3), activation='relu', padding='same'):
     x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
     x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
     x = Add()([x, x1])
-    x = SubPixelConv2D(channels=16, scale=2, kernel_size=kernel_size, activation=activation, padding=padding)(x)
+    x = SubPixelConv2D(channels=32, scale=2, kernel_size=kernel_size, activation=activation, padding=padding)(x)
     # The sigmoid activation function guarantees that the final output are within the range [0,1]
     outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
     return Model(inputs=inputs, outputs=outputs, name='Generator')
@@ -55,13 +55,14 @@ def create_discriminator(input_shape, kernel_size=(3, 3), activation='relu', pad
     """
     inputs = Input(input_shape)
     x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(inputs)
-    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
+    x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
+    x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
     x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
-    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
-    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
+    x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
+    x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
     x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
-    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
-    x = Conv2D(filters=32, kernel_size=kernel_size, activation=activation, padding=padding)(x)
+    x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
+    x = ResidualBlock(filters=32, kernel_size=kernel_size, scaling=None, activation=activation, padding=padding)(x)
     x = MaxPooling2D(pool_size=(2, 2), strides=2)(x)
     x = Flatten()(x)
     x = Dense(1, activation='sigmoid')(x)
@@ -69,14 +70,13 @@ def create_discriminator(input_shape, kernel_size=(3, 3), activation='relu', pad
 
 
 class B:
-    def __init__(self, input_shape, loss='mse', scale=4, loss_weights=None):
+    def __init__(self, input_shape, loss='mse', scale=4):
         """
         Creates the Generative Adversarial Network model.
 
         :param input_shape: size of the input of the first layer.
         :param scale: the up-scaling ratio desired. default_value=4
         :param loss: the loss selected. It can be: 'mae', 'mse', ssim_loss, vgg and new_loss. default_value='mse'
-        :param loss_weights: weights assigned to the loss functions of the GAN model. default_value=None
         """
         # If the loss selected is the content loss, aka perceptual loss or vgg loss.
         if loss == 'vgg':
@@ -86,9 +86,6 @@ class B:
             self.vgg_model = Model([model.input], model.get_layer('block5_conv2').output, name='Vgg_model')
             # Assign the vgg_loss as the loss adopted during the training phase
             loss = self.vgg_loss
-            # Reduce the weight of the binary crossentropy loss of the discriminator
-            loss_weights = [1., 1e-3]
-
         # Input of the generative model
         inputs = Input(shape=input_shape)
         # Input shape of the discriminative model
@@ -100,13 +97,15 @@ class B:
         # Compile both of them and print their summaries.
         self.generator.compile(loss=loss, optimizer=optimizers.Adam(learning_rate=0.0001),
                                metrics=[psnr_metric, ssim_metric])
-        self.discriminator.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(learning_rate=0.0001))
+        self.discriminator.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(learning_rate=0.0005))
         self.generator.summary()
         self.discriminator.summary()
         # Join the two parts in order to obtain the GAN model
         x = self.generator(inputs)
         outputs = self.discriminator(x)
         self.model = Model(inputs=inputs, outputs=[x, outputs], name='Generative_Adversarial_Network')
+        # Reduce the weight of the binary crossentropy loss of the discriminator
+        loss_weights = [1., 1e-3]
         # Compile the GAN model
         self.model.compile(loss=[loss, "binary_crossentropy"], optimizer=optimizers.Adam(learning_rate=0.0001),
                            loss_weights=loss_weights)
@@ -128,8 +127,7 @@ class B:
         validation_steps = int(100 / batch_dim)
         valid_loss, valid_psnr, valid_ssim = [], [], []
         train_loss, train_psnr, train_ssim = [], [], []
-        dis_loss_SR, dis_loss_HR = [], []
-        gen_loss, model_loss = [], []
+        dis_loss_SR, dis_loss_HR, gen_loss = [], [], []
         # Cycle on the epochs
         for epoch in range(1, epochs + 1):
             print(f'\nProcessing Epoch {epoch} out of {epochs} ... ')
@@ -146,26 +144,26 @@ class B:
                 batch_SR = self.generator.predict(batch_LR)
                 # Labels are near 0 since the images are not real but created by the generator. Label smoothing: soft
                 # values are adopted in order to control network confidence and improving Gan training.
-                labels = np.random.uniform(0.0, 0.3, size=batch_dim).astype(np.float32)
+                labels = np.random.uniform(0.0, 0.2, size=batch_dim).astype(np.float32)
                 # Compute the discriminator loss on the SR images and updates the weights to minimize it.
                 # The loss here corresponds to the following loss computed on all the examples in the batch and summed.
                 # loss_single_sample = -(label * log(D(G(z))) + (1-label) * log(1 - D(G(z))))
                 # Both the terms are kept since label smoothing. Discriminator wants D(G(z)) low.
-                loss = self.discriminator.train_on_batch(batch_SR, labels)
+                loss = self.discriminator.train_on_batch(batch_SR[:5], labels[:5])
                 dis_loss_SR.append(loss)
                 # Train the discriminator with the real HR images. Labels are set near to 1 given that the images are
                 # true. Label smoothing: soft values are adopted in order to control network confidence and improve GAN
                 # training.
-                labels = np.random.uniform(0.7, 1, size=batch_dim).astype(np.float32)
+                labels = np.random.uniform(0.8, 1, size=batch_dim).astype(np.float32)
                 # Compute the discriminator loss on the SR images and updates the weights to minimize it.
                 # The loss here corresponds to the following loss computed on all the examples in the batch and summed.
                 # loss_single_sample = -(label * log(D(x)) + (1-label) * log(1 - D(x)))
                 # Both the terms are kept since label smoothing. Discriminator wants D(x) high.
-                loss = self.discriminator.train_on_batch(batch_HR, labels)
+                loss = self.discriminator.train_on_batch(batch_HR[5:], labels[5:])
                 dis_loss_HR.append(loss)
                 # Train the generator
                 self.discriminator.trainable = False
-                labels = np.ones(size=batch_dim, dtype=np.float32)
+                labels = np.ones(shape=batch_dim, dtype=np.float32)
                 # Compute the generator loss (discriminator is fixed) on the SR images and updates the weights to
                 # minimize it. The adversarial loss, that is only a part of the generator loss,  here corresponds to
                 # the following loss computed on all the examples in the batch and summed.
@@ -173,7 +171,6 @@ class B:
                 # Generator wants D(G(z)) high to fool the discriminator
                 loss = self.model.train_on_batch(batch_LR, [batch_HR, labels])
                 gen_loss.append(loss[0])
-                model_loss.append(loss[1])
                 # Compute metrics and loss after the update of the network parameters
                 loss, psnr, ssim = self.generator.test_on_batch(x=batch_LR, y=batch_HR)
                 train_loss.append(loss)
@@ -182,8 +179,7 @@ class B:
             # Print results after every epoch
             print(f' Discriminator loss_SR: {np.mean(dis_loss_SR[-steps_per_epoch:]):.4f} '
                   f'- loss_HR: {np.mean(dis_loss_HR[-steps_per_epoch:]):.4f} |',
-                  f'Generator loss: {np.mean(gen_loss[-steps_per_epoch:]):.4f} | '
-                  f'Model loss: {np.mean(model_loss[-steps_per_epoch:]):.4f}')
+                  f'Generator loss: {np.mean(gen_loss[-steps_per_epoch:]):.4f}')
             print(f' Train Model loss: {np.mean(train_loss[-steps_per_epoch:]):.4f} '
                   f'- Train psnr: {np.mean(train_psnr[-steps_per_epoch:]):.4f} '
                   f'- Train ssim: {np.mean(train_ssim[-steps_per_epoch:]):.4f}')
@@ -335,11 +331,12 @@ class B:
         # New Generator
         # If the loss required is the perceptual loss
         if loss == 'vgg':
+            # Assign the vgg_loss as the loss adopted during the training phase
             loss = self.vgg_loss
         # Remove the last two layers of the generator
         x = self.generator.layers[-3].output
         # Replace them with the new layers
-        x = SubPixelConv2D(channels=16, scale=scale, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = SubPixelConv2D(channels=32, scale=scale, kernel_size=(3, 3), activation='relu', padding='same')(x)
         # The sigmoid activation function guarantees that the final output are within the range [0,1]
         outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
         # Over subscribe the old generator with the new generator
@@ -362,7 +359,8 @@ class B:
         # Connect the layer at the old discriminator
         outputs = self.discriminator(x)
         self.discriminator = Model(inputs=inputs, outputs=outputs)
-        self.discriminator.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(learning_rate=0.0001))
+        self.discriminator.trainable = True
+        self.discriminator.compile(loss="binary_crossentropy", optimizer=optimizers.Adam(learning_rate=0.0005))
         self.discriminator.summary()
         # New Model
         # Join the two parts in order to obtain the new GAN model
@@ -370,15 +368,18 @@ class B:
         x = self.generator(inputs)
         outputs = self.discriminator(x)
         self.model = Model(inputs=inputs, outputs=[x, outputs])
+        # Reduce the weight of the binary crossentropy loss of the discriminator
+        loss_weights = [1., 1e-3]
         # Compile the GAN model
-        self.model.compile(loss=[loss, "binary_crossentropy"], optimizer=optimizers.Adam(learning_rate=0.0001))
+        self.model.compile(loss=[loss, "binary_crossentropy"], optimizer=optimizers.Adam(learning_rate=0.0001),
+                           loss_weights=loss_weights)
         self.model.summary()
 
     def vgg_loss(self, image_true, image_pred):
         """
         Evaluates the image quality based on its perceptual quality comparing the high level features of the
         generated image and the ground truth image. The features are extracted from the outputs of one of the
-        middle-final layers of the vgg network.
+        middle-final layers of the vgg network. In this version the content loss is added to the L2 loss.
 
         :param image_true: ground truth image.
         :param image_pred: predicted image.

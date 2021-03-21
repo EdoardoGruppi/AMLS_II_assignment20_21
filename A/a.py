@@ -40,10 +40,9 @@ class A:
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
         x = Add()([x, x1])
-        x = SubPixelConv2D(channels=16, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
+        x = SubPixelConv2D(channels=32, scale=2, kernel_size=(3, 3), activation='relu', padding='same')(x)
         # The sigmoid activation function guarantees that the final output are within the range [0,1]
         outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
-
         self.model = Model(inputs, outputs)
         # Prints a summary of the network
         self.model.summary()
@@ -195,7 +194,7 @@ class A:
         """
         Evaluates the image quality based on its perceptual quality comparing the high level features of the
         generated image and the ground truth image. The features are extracted from the outputs of one of the
-        middle-final layers of the vgg network.
+        middle-final layers of the vgg network. In this version the content loss is added to the L2 loss.
 
         :param image_true: ground truth image.
         :param image_pred: predicted image.

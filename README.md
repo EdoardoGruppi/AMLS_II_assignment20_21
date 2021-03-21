@@ -2,7 +2,7 @@
 
 [Project](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21.git) ~ [Guide](https://github.com/EdoardoGruppi/AMLS_II_assignment20_21/blob/main/Instructions.md)
 
-This project aims to develop powerful and lightweight networks to address the two tasks presented in the NTIRE 2017 SuperResolution Challenge. The two deep learning models proposed, e.g. a CNN and a GAN, achieved satisfactory results demonstrating an important ability in introducing high-frequency information to the original low resolution pictures. The models are trained in two distinct approaches leveraging different combinations of L2 and content losses.
+This project aims to develop powerful and lightweight networks to address the two tasks presented in the NTIRE 2017 SuperResolution Challenge. The two deep learning models proposed, i.e. a CNN and a GAN, achieved satisfactory results demonstrating an important ability in introducing high-frequency information to the original low resolution pictures. The models are trained in two distinct approaches leveraging different combinations of L2 and content losses.
 
 **Important: the Datasets folder is empty since the datasets will be downloaded automatically running the main.py.**
 
