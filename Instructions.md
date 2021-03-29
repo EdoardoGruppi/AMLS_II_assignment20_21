@@ -86,7 +86,7 @@ Root network of the generative model
 
 ```python
 inputs = Input(shape=input_shape)
-x = DifferenceRGB(RGB_MEAN_A)(inputs)
+x = DifferenceRGB(RGB_MEAN_B)(inputs)
 x1 = Conv2D(filters=32, kernel_size=(3, 3), activation='relu', padding='same')(x)
 x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x1)
 x = ResidualBlock(filters=32, kernel_size=(3, 3), scaling=None, activation='relu', padding='same')(x)
