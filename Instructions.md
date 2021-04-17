@@ -75,7 +75,7 @@ x = Add()([x, x1])
 Final part for the x2, x3, x4 ratios
 
 ```python
-x = SubPixelConv2D(channels=16, scale=ratio, kernel_size=(3, 3), activation='relu', padding='same')(x)
+x = SubPixelConv2D(channels=32, scale=ratio, kernel_size=(3, 3), activation='relu', padding='same')(x)
 # The sigmoid activation function guarantees that the final output are within the range [0,1]
 outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
 ```
@@ -103,7 +103,7 @@ x = Add()([x, x1])
 Final part of the generative model for the x2, x3, x4 ratios
 
 ```python
-x = SubPixelConv2D(channels=16, scale=ratio, kernel_size=(3, 3), activation='relu', padding='same')(x)
+x = SubPixelConv2D(channels=32, scale=ratio, kernel_size=(3, 3), activation='relu', padding='same')(x)
 # The sigmoid activation function guarantees that the final output are within the range [0,1]
 outputs = Conv2D(filters=3, kernel_size=(3, 3), activation='sigmoid', padding='same')(x)
 ```
@@ -152,6 +152,7 @@ input_shape = [patch_size, patch_size, 3]
 ## Issues
 
 - If the device's GPU memory is not enough to run the code, it is possible to execute the training of each model inside a dedicated subprocess. Tensorflow then will release the part of GPU memory used by each subprocess as soon as it ends.
+- At the present (04/17/2021), all the functions implemented to download the datasets work fine. However, whenever some problems are encountered with the original links, please download the datasets from the following directory: [Datasets](https://drive.google.com/drive/u/1/folders/1ulU6A3lDZhzolb16oOe7YaplhmS1WqpD).
 
 ## Reference for the additional test datasets
 

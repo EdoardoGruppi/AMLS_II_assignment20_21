@@ -43,19 +43,19 @@ Please note that the descriptions provided in this subsection are taken directly
 
 **main.py** is the starting point of the entire project. It defines the order in which instructions are realised. More precisely, it is responsible to call functions from other files in order to divide the datasets provided, pre-process images as well as to instantiate, train and test the models.
 
-**a.py** contains the class A from which to instantiate the (CNN) model for (Task A). Once the model is created, it provides functions in order to be trained and also to generate Super Resolution images starting from Low Resolution pictures.
+**a.py** contains the class A from which to instantiate the CNN model for Task A. Once the model is created, it provides functions in order to be trained and also to generate Super Resolution images starting from Low Resolution pictures.
 
-**b.py** contains the class B from which to instantiate the (GAN) model for (Task B). Once the model is created, it provides functions in order to be trained and also to generate Super Resolution images starting from Low Resolution pictures.
+**b.py** contains the class B from which to instantiate the GAN model for Task B. Once the model is created, it provides functions in order to be trained and also to generate Super Resolution images starting from Low Resolution pictures.
 
 **config.py** makes available all the global variables used in the project.
 
 **pre_processing.py** provides crucial functions related to the preparation of the batches. In particular, this module enables to create tensorflow specific objects that correspond to the training, validation and test datasets. Whenever it is needed, a batch is created by iterating this objects. Specifically a batch is a set of pairs of low resolution and high resolution images that are cropped and that can be randomly rotated and flipped.
 
-**utilities.py** includes functions to download and split the datasets in the dedicated folder, to compute the mean RGB value of the dataset and to plot results and other important elements.
+**utilities.py** includes functions to download and split the datasets in the dedicated folder, to compute the mean RGB value of the dataset and to plot results.
 
 **components.py** contains custom layers created specifically for this project as well as the metrics and losses adopted during the training phases.
 
-**\_Additional_code folder** includes some .py files useful for the code devolepment as well as to report some of the most noteworthy experiments conducted throughout the project.
+**History** includes a description of some ablation studies performed during the definiton of the CNN model structure. However, although the tests are performed on the same images, only some cropped areas are used. Consequently, it is very difficult to compare the different architectures with each other only through the quantitative results obtained. Furthermore, objective metrics such as PSNR and SSIM notoriously fails to assess the image perceptual quality. As a result, most of the evaluation was done visually.
 
 ## Software used
 
