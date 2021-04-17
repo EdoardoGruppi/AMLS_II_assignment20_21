@@ -55,7 +55,7 @@ Please note that the descriptions provided in this subsection are taken directly
 
 **components.py** contains custom layers created specifically for this project as well as the metrics and losses adopted during the training phases.
 
-**History** includes a description of some ablation studies performed during the definiton of the CNN model structure. However, although the tests are performed on the same images, only some cropped areas are used. Consequently, it is very difficult to compare the different architectures with each other only through the quantitative results obtained. Furthermore, objective metrics such as PSNR and SSIM notoriously fails to assess the image perceptual quality. As a result, most of the evaluation was done visually.
+**History** includes a description of some ablation studies performed during the definiton of the CNN model structure. However, although the tests are performed on the same images, only some cropped areas are used. Consequently, it is very difficult to compare the different architectures with each other only through the quantitative results obtained. Furthermore, objective metrics such as PSNR and SSIM notoriously fail to assess the image perceptual quality. As a result, most of the evaluation was done visually.
 
 ## Software used
 
